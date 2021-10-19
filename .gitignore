@@ -11,8 +11,9 @@ test-config.edn
 profiles.clj
 /.env
 .nrepl-port
+.idea/
+*.iml
 
 /node_modules
 /log
-
-
+xtdb*
