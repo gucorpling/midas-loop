@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Leiningen: metosin/reitit-schema:0.5.15">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/metosin/reitit-schema/0.5.15/reitit-schema-0.5.15.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

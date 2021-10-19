@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Leiningen: luminus/ring-undertow-adapter:1.2.1">
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/luminus/ring-undertow-adapter/1.2.1/ring-undertow-adapter-1.2.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
