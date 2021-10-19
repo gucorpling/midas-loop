@@ -6,6 +6,7 @@
             [reitit.ring.middleware.muuntaja :as muuntaja]
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.parameters :as parameters]
+            [conllu-rest.routes.conllu :refer [conllu-routes]]
             [conllu-rest.middleware.formats :as formats]
             [ring.util.http-response :refer :all]
             [clojure.java.io :as io]))
@@ -31,6 +32,8 @@
                  coercion/coerce-request-middleware
                  ;; multipart
                  multipart/multipart-middleware]}
+
+   conllu-routes
 
    ;; swagger documentation
    ["" {:no-doc  true

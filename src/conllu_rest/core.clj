@@ -5,6 +5,7 @@
             [conllu-rest.config :refer [env]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.tools.logging :as log]
+            [clojure.java.io :as io]
             [mount.core :as mount])
   (:gen-class))
 

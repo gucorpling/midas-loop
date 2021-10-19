@@ -16,6 +16,13 @@ To start a web server for the application, run:
 
     lein run 
 
+System properties:
+
+* `python-executable-path`
+* `python-library-path`
+* `document-name-key`
+
 ## License
 
 Copyright © 2021 FIXME
+

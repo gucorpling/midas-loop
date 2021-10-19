@@ -1,2 +1,4 @@
-{:prod true
- :port 3000}
+{:prod                    true
+ :port                    3000
+ :conllu-rest.xtdb/config {:main-db-dir    "xtdb_data"
+                           :session-db-dir "xtdb_session_data"}}

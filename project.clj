@@ -28,7 +28,11 @@
                  [ring-webjars "0.2.0"]
                  [ring/ring-core "1.9.4"]
                  [ring/ring-defaults "0.3.3"]
-                 [ring/ring-json "0.5.1"]]
+
+                 [com.xtdb/xtdb-core "1.19.0-beta1"]
+                 [com.xtdb/xtdb-lmdb "1.19.0-beta1"]
+                 [com.xtdb/xtdb-http-server "1.19.0-beta1"]
+                 [clj-python/libpython-clj "1.46"]]
 
   :min-lein-version "2.0.0"
 
