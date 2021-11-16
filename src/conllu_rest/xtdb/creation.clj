@@ -1,14 +1,31 @@
 (ns conllu-rest.xtdb.creation
-  (:require [conllu-rest.xtdb.easy :as cxe]
-            )
+  "Contains functions for creating XTDB records for conllu input. Note the following important joins:
+
+  :document/sentences
+    :sentence/conllu-metadata
+    :sentence/tokens
+      :token/feats
+      :token/deps
+      :token/misc"
+  (:require [conllu-rest.xtdb.easy :as cxe])
   (:import (java.util UUID)))
+
+;; TODO:
+;; - IDs should be uuids, not human-readable strings
+;; - "id" keyword should be removed from tokens--it's inferrable. But need a supertoken/empty token/token distinguisher
+
+(def atomic-fields #{:id :form :lemma :upos :xpos :head :deprel})
+(def associative-fields #{:feats :misc :deps})
 
 (def document-name-key (or (System/getProperty "document-name-key" "meta::id")))
 (def document-id-key (or (System/getProperty "document-id-key" "newdoc id")))
 
-(defn resolve-from-metadata [document key]
-  (if-let [name (get (-> document first :metadata) key)]
-    name
+(defn resolve-from-metadata
+  "Attempt to read a piece of metadata from the first sentence in the document.
+  Throw if the key doesn't exist."
+  [document key]
+  (if-let [value (get (-> document first :metadata) key)]
+    value
     (throw (ex-info (str "Attempted to upload document, but required metadata key \"" key "\" was not found")
                     {:document document
                      :key      key}))))
@@ -21,17 +38,17 @@
                  {:conllu-metadata/key   key
                   :conllu-metadata/value value}))]))
 
-(def atomic-fields #{:id :form :lemma :upos :xpos :head :deprel})
-(def associative-fields #{:feats :misc :deps})
-
 (defn create-associative [name sentence-id [key value]]
   (let [associative-id (str sentence-id "-" name ":" key)]
     [(cxe/put* (cxe/create-record name associative-id {(keyword name "key")   key
                                                        (keyword name "value") value}))]))
 
 (defn create-token
+  "Create a token record for the 10 standard conllu columns.
+  Columns are differentiated by whether they're atomic or associative--feats, misc, and deps are associative.
+  In the associative case, another record is created for each key-value pair, and a join is added at
+  :token/deps, :token/feats, or :token/misc."
   [sentence-id token]
-
   (let [token-id (str sentence-id "-token:" (:id token))
         feats-txs (reduce into (map (partial create-associative "feats" sentence-id) (:feats token)))
         feats-ids (mapv (comp :feats/id second) feats-txs)
@@ -42,11 +59,20 @@
         token (cxe/create-record "token" token-id (merge {:token/feats feats-ids
                                                           :token/deps  deps-ids
                                                           :token/misc  misc-ids}
-                                                         (select-keys token atomic-fields)))
+                                                         (into {} (mapv (fn [[k v]] [(keyword "token" (name k)) v])
+                                                                        (select-keys token atomic-fields)))))
         token-tx (cxe/put* token)]
     (reduce into [token-tx] [feats-txs deps-txs misc-txs])))
 
-(defn create-sentence [document-id order {:keys [tokens metadata]}]
+(defn- sentence-ids-from-txs
+  "each item in a sentence tx looks like [[:xtdb.api/put {:sentence/id :foo, ...}] ...]
+  this function takes a seq of sentence-txs and returns a seq of their ids"
+  [sentence-txs]
+  (mapv (comp :sentence/id second first) sentence-txs))
+
+(defn create-sentence
+  "Returns a giant transaction vector for this sentence and the sentence's tokens"
+  [document-id order {:keys [tokens metadata]}]
   (let [sentence-id (str document-id "-sentence:" (inc order))
         conllu-metadata-txs (reduce into (map #(create-conllu-metadata sentence-id (first %) (second %)) metadata))
         conllu-metadata-ids (mapv (comp :conllu-metadata/id second) conllu-metadata-txs)
@@ -61,10 +87,13 @@
 
 ;; TODO check if IDs already exist, or use IDs directly
 (defn create-document [xtdb-node document]
+  ;; First: read document id and name from metadata
   (let [document-id (resolve-from-metadata document document-id-key)
         document-name (resolve-from-metadata document document-name-key)
+        ;; Next, set up sentence transactions and note their IDs
         sentence-txs (map-indexed (partial create-sentence document-id) document)
-        sentence-ids (mapv (comp :sentence/id second first) sentence-txs)
+        sentence-ids (sentence-ids-from-txs sentence-txs)
+        ;; join the document to the sentence ids
         document (cxe/create-record "document" document-id {:document/name      document-name
                                                             :document/sentences sentence-ids})
         document-tx (cxe/put* document)
