@@ -30,37 +30,46 @@
                     {:document document
                      :key      key}))))
 
-(defn create-conllu-metadata [sentence-id key value]
-  (let [conllu-metadata-id (str sentence-id "-conllu_metadata:" key)]
+(defn create-conllu-metadata [[key value]]
+  (let [conllu-metadata-id (UUID/randomUUID)]
     [(cxe/put* (cxe/create-record
                  "conllu-metadata"
                  conllu-metadata-id
                  {:conllu-metadata/key   key
                   :conllu-metadata/value value}))]))
 
-(defn create-associative [name sentence-id [key value]]
-  (let [associative-id (str sentence-id "-" name ":" key)]
-    [(cxe/put* (cxe/create-record name associative-id {(keyword name "key")   key
-                                                       (keyword name "value") value}))]))
+(defn create-associative [name [key value]]
+  (let [associative-id (UUID/randomUUID)]
+    [(cxe/put* (cxe/create-record
+                 name
+                 associative-id
+                 {(keyword name "key")   key
+                  (keyword name "value") value}))]))
 
 (defn create-token
   "Create a token record for the 10 standard conllu columns.
   Columns are differentiated by whether they're atomic or associative--feats, misc, and deps are associative.
   In the associative case, another record is created for each key-value pair, and a join is added at
-  :token/deps, :token/feats, or :token/misc."
-  [sentence-id token]
-  (let [token-id (str sentence-id "-token:" (:id token))
-        feats-txs (reduce into (map (partial create-associative "feats" sentence-id) (:feats token)))
+  :token/deps, :token/feats, or :token/misc.
+
+  NOTE: :token/id is the same as the internal database ID (:xt/id). It is NOT the same thing as the `id`
+  conllu column, which is not represented in the database (it is generated when conllu is serialized)."
+  [token]
+  ;; Todo: implement token-type based on value of :id
+  (let [token-id (UUID/randomUUID)
+        ;; todo: maybe refactor to rely on `associative-fields`
+        feats-txs (reduce into (map #(create-associative "feats" %) (:feats token)))
         feats-ids (mapv (comp :feats/id second) feats-txs)
-        deps-txs (reduce into (map (partial create-associative "deps" sentence-id) (:deps token)))
+        deps-txs (reduce into (map #(create-associative "deps" %) (:deps token)))
         deps-ids (mapv (comp :deps/id second) deps-txs)
-        misc-txs (reduce into (map (partial create-associative "misc" sentence-id) (:misc token)))
+        misc-txs (reduce into (map #(create-associative "misc" %) (:misc token)))
         misc-ids (mapv (comp :misc/id second) misc-txs)
         token (cxe/create-record "token" token-id (merge {:token/feats feats-ids
                                                           :token/deps  deps-ids
-                                                          :token/misc  misc-ids}
+                                                          :token/misc  misc-ids
+                                                          :token/id    token-id}
                                                          (into {} (mapv (fn [[k v]] [(keyword "token" (name k)) v])
-                                                                        (select-keys token atomic-fields)))))
+                                                                        (select-keys token (disj atomic-fields :id))))))
         token-tx (cxe/put* token)]
     (reduce into [token-tx] [feats-txs deps-txs misc-txs])))
 
@@ -72,11 +81,11 @@
 
 (defn create-sentence
   "Returns a giant transaction vector for this sentence and the sentence's tokens"
-  [document-id order {:keys [tokens metadata]}]
-  (let [sentence-id (str document-id "-sentence:" (inc order))
-        conllu-metadata-txs (reduce into (map #(create-conllu-metadata sentence-id (first %) (second %)) metadata))
+  [{:keys [tokens metadata]}]
+  (let [sentence-id (UUID/randomUUID)
+        conllu-metadata-txs (reduce into (map #(create-conllu-metadata %) metadata))
         conllu-metadata-ids (mapv (comp :conllu-metadata/id second) conllu-metadata-txs)
-        token-txs (reduce into (map (partial create-token sentence-id) tokens))
+        token-txs (reduce into (map create-token tokens))
         token-ids (mapv (comp :token/id second) token-txs)
         sentence (cxe/create-record "sentence"
                                     sentence-id
@@ -87,11 +96,11 @@
 
 ;; TODO check if IDs already exist, or use IDs directly
 (defn create-document [xtdb-node document]
-  ;; First: read document id and name from metadata
-  (let [document-id (resolve-from-metadata document document-id-key)
+  (let [document-id (UUID/randomUUID)
+        ;; First: read document name from metadata
         document-name (resolve-from-metadata document document-name-key)
         ;; Next, set up sentence transactions and note their IDs
-        sentence-txs (map-indexed (partial create-sentence document-id) document)
+        sentence-txs (map create-sentence document)
         sentence-ids (sentence-ids-from-txs sentence-txs)
         ;; join the document to the sentence ids
         document (cxe/create-record "document" document-id {:document/name      document-name
