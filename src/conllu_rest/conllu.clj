@@ -19,7 +19,8 @@
                                   (-> (into {} (into {} (map (fn [[k v]] [(keyword k) v]) (python/dict token))) )
                                       (update :feats #(try (into {} (python/dict %)) (catch Exception e {})))
                                       (update :deps #(try (into {} (python/dict %)) (catch Exception e {})))
-                                      (update :misc #(try (into {} (python/dict %)) (catch Exception e {})))))
+                                      (update :misc #(try (into {} (python/dict %)) (catch Exception e {})))
+                                      (update :id #(if (= :pyobject (type %)) (into [] (python/list %)) %))))
                                 (vec (python/list token-list)))
            :metadata      (into {} (python/dict (py.- token-list "metadata")))
            :python-object token-list})
@@ -38,6 +39,7 @@
 8   lazy    lazy   ADJ    JJ   Degree=Pos                  9   amod    _   _
 9   dog     dog    NOUN   NN   Number=Sing                 5   nmod    _   SpaceAfter=No
 10  .       .      PUNCT  .    _                           5   punct   _   _
+11.1  empty       _      _  _    _                           _   _   _   _
 
 ")
 
