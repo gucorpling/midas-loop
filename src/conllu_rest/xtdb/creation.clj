@@ -4,17 +4,15 @@
   :document/sentences
     :sentence/conllu-metadata
     :sentence/tokens
-      :token/feats
-      :token/deps
+      :token/token-type
+      :token/form
+      ...
       :token/misc"
   (:require [conllu-rest.xtdb.easy :as cxe])
   (:import (java.util UUID)))
 
 ;; TODO:
-;; - IDs should be uuids, not human-readable strings
-;; - "id" keyword should be removed from tokens--it's inferrable. But need a supertoken/empty token/token distinguisher
-
-;; These are all standard CoNLL-U EXCEPT for :id-type. We do not want to store :id
+;; These are all standard CoNLL-U EXCEPT for :token-type. We do not want to store :id
 ;; because it could be invalidated by edits to tokenization. Rather, we will store id type
 ;; (:token, :super, :empty)
 (def atomic-fields #{:token-type :form :lemma :upos :xpos :head :deprel})
@@ -197,9 +195,6 @@
   (first xs)
 
   (create-document xtdb-node xs)
-
-
-
 
   xs
   (:metadata (first xs)))
