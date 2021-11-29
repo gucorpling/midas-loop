@@ -24,7 +24,7 @@
   "Attempt to read a piece of metadata from the first sentence in the document.
   Throw if the key doesn't exist."
   [document key]
-  (if-let [value (get (-> document first :metadata) key)]
+  (if-let [value (get (into {} (-> document first :metadata)) key)]
     value
     (throw (ex-info (str "Attempted to upload document, but required metadata key \"" key "\" was not found")
                     {:document document
@@ -69,6 +69,12 @@
         (and (coll? id) (= (second id) ".")) :empty
         :else :token))
 
+(defn add-subtokens
+  "Assumes that supertokens are only ever used for normal tokens, and therefore have an ID like 11-12 or 13-16"
+  [token token-id-map [start _ end]]
+  (let [subtoken-orig-ids (range start (inc end))]
+    (assoc token :token/subtokens (mapv token-id-map subtoken-orig-ids))))
+
 (defn build-token
   "Create a token record for 9 of the 10 standard conllu columns. ID is the exception, and is replaced by
   \"token-type\" since records should be resilient to tokenization changes. IDs are instead inferred at export time.
@@ -78,12 +84,13 @@
 
   NOTE: :token/id is the same as the internal database ID (:xt/id). It is NOT the same thing as the `id`
   conllu column, which is not represented in the database (it is generated when conllu is serialized)."
-  [token]
+  [token-id-map token]
   ;; Todo: add validations if needed
-  (let [token-id (UUID/randomUUID)
-        token (-> token (assoc :token-type (determine-token-type token)) (dissoc :id))
+  (let [token-type (determine-token-type token)
+        orig-id (:id token)
+        new-id (get token-id-map orig-id)
+        token (-> token (assoc :token-type token-type) (dissoc :id))
         ;; todo: maybe refactor to rely on `associative-fields`
-        [token-type-txs [token-type-id]] (build-field token "token-type")
         [form-txs [form-id]] (build-field token "form")
         [lemma-txs [lemma-id]] (build-field token "lemma")
         [upos-txs [upos-id]] (build-field token "upos")
@@ -95,24 +102,22 @@
         [misc-txs misc-ids] (build-field token "misc")
         token (cxe/create-record
                 "token"
-                token-id
-                {:token/token-type token-type-id
-                 :token/form       form-id
-                 :token/lemma      lemma-id
-                 :token/upos       upos-id
-                 :token/xpos       xpos-id
-                 :token/feats      feats-ids
-                 :token/head       head-id
-                 :token/deprel     deprel-id
-                 :token/deps       deps-ids
-                 :token/misc       misc-ids
-                 ;; NOT the CoNLL-U id--this is an internal UUID
-                 :token/id         token-id})
+                new-id
+                (cond-> {:token/token-type token-type
+                         :token/form       form-id
+                         :token/lemma      lemma-id
+                         :token/upos       upos-id
+                         :token/xpos       xpos-id
+                         :token/feats      feats-ids
+                         :token/head       head-id
+                         :token/deprel     deprel-id
+                         :token/deps       deps-ids
+                         :token/misc       misc-ids}
+                        (= token-type :super) (add-subtokens token-id-map orig-id)))
         token-tx (cxe/put* token)]
     (reduce into
             [token-tx]
-            [token-type-txs
-             form-txs
+            [form-txs
              lemma-txs
              upos-txs
              xpos-txs
@@ -132,10 +137,12 @@
   "Returns a giant transaction vector for this sentence and the sentence's tokens"
   [{:keys [tokens metadata]}]
   (let [sentence-id (UUID/randomUUID)
+        ;; supertokens need to have the ID of subsequent tokens ready--generate IDs here to facilitate this
+        token-id-map (into {} (map (fn [{:keys [id]}] [id (UUID/randomUUID)]) tokens))
         conllu-metadata-txs (reduce into (map #(build-conllu-metadata %) metadata))
         conllu-metadata-ids (mapv (comp :conllu-metadata/id second) conllu-metadata-txs)
-        token-txs (reduce into (map build-token tokens))
-        token-ids (mapv (comp :token/id second) token-txs)
+        token-txs (reduce into (map #(build-token token-id-map %) tokens))
+        token-ids (mapv (comp :token/id second) (filter (comp :token/id second) token-txs))
         sentence (cxe/create-record "sentence"
                                     sentence-id
                                     {:sentence/conllu-metadata conllu-metadata-ids
@@ -182,13 +189,15 @@
 # s_type = frag
 # text = Juan de Cartagena
 # newpar = head (1 s)
+1-2	Juan	Juan	_	_	_	_	_	_	_
 1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
 2	de	de	PROPN	NNP	Number=Sing	1	flat	1:flat	_
+2.1	foo	foo	_	_	_	_	_	_	_
+2.2	bar	bar	_	_	_	_	_	_	_
 3	Cartagena	Cartagena	PROPN	NNP	Number=Sing	1	flat	1:flat	Entity=person-1)
-
 ")
 
-  (def xs (conllu-rest.conllu/parse-conllu-string-with-python data))
+  (def xs (conllu-rest.conllu/parse-conllu-string data))
 
   (ffirst xs)
 
