@@ -32,8 +32,7 @@
                  [com.xtdb/xtdb-core "1.19.0-beta1"]
                  [com.xtdb/xtdb-lmdb "1.19.0-beta1"]
                  [com.xtdb/xtdb-rocksdb "1.19.0-beta1"]
-                 [com.xtdb/xtdb-http-server "1.19.0-beta1"]
-                 [clj-python/libpython-clj "1.46"]]
+                 [com.xtdb/xtdb-http-server "1.19.0-beta1"]]
 
   :min-lein-version "2.0.0"
 

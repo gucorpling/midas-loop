@@ -1,31 +1,7 @@
 (ns conllu-rest.conllu
-  "Wrapper for Python conllu library"
-  (:require [libpython-clj.python :refer [py. py.. py.-] :as py]
-            [libpython-clj.require :refer [require-python]]
-            [clojure.string :as string])
+  "conllu parsing code"
+  (:require [clojure.string :as string]))
 
-  )
-
-(def python-executable-path (or (System/getProperty "python-executable-path") "/usr/bin/python3"))
-(def python-library-path (or (System/getProperty "python-library-path") "/usr/lib/x86_64-linux-gnu/libpython3.8.a"))
-(py/initialize! :python-executable python-executable-path
-                :library-path python-library-path)
-
-(require-python '[conllu :as conllu])
-(require-python '[builtins :as python])
-
-(defn parse-conllu-string-with-python [conllu-string]
-  (mapv (fn [token-list]
-          {:tokens        (mapv (fn [token]
-                                  (-> (into {} (into {} (map (fn [[k v]] [(keyword k) v]) (python/dict token))))
-                                      (update :feats #(try (into {} (python/dict %)) (catch Exception e {})))
-                                      (update :deps #(try (into {} (python/dict %)) (catch Exception e {})))
-                                      (update :misc #(try (into {} (python/dict %)) (catch Exception e {})))
-                                      (update :id #(if (= :pyobject (type %)) (into [] (python/list %)) %))))
-                                (vec (python/list token-list)))
-           :metadata      (into {} (python/dict (py.- token-list "metadata")))
-           :python-object token-list})
-        (conllu/parse conllu-string)))
 
 ;; Native implementation
 (defn metadata-line? [line]
@@ -93,7 +69,7 @@
   (let [lines (string/split-lines lines)
         metadata-lines (filter metadata-line? lines)
         token-lines (filter #(not (metadata-line? %)) lines)]
-    {:metadata (into {} (map parse-metadata-line metadata-lines))
+    {:metadata (into [] (map parse-metadata-line metadata-lines))
      :tokens   (into [] (map parse-token-line token-lines))}))
 
 (defn parse-conllu-string [conllu-string]
@@ -115,9 +91,6 @@
 9	.	.	PUNCT	.	_	7	punct	7:punct	_
 
 ")
-
-  (def xs (parse-conllu-string-with-python data))
-
 
   (def xs (parse-conllu-string data))
 
