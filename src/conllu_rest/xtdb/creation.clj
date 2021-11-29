@@ -18,8 +18,7 @@
 (def atomic-fields #{:token-type :form :lemma :upos :xpos :head :deprel})
 (def associative-fields #{:feats :misc :deps})
 
-(def document-name-key (or (System/getProperty "document-name-key" "meta::id")))
-(def document-id-key (or (System/getProperty "document-id-key" "newdoc id")))
+(def document-name-key (or (System/getProperty "document-name-key" "newdoc id")))
 
 (defn resolve-from-metadata
   "Attempt to read a piece of metadata from the first sentence in the document.
@@ -145,7 +144,7 @@
     (reduce into [sentence-tx] [conllu-metadata-txs token-txs])))
 
 ;; TODO check if IDs already exist, or use IDs directly
-(defn create-document [xtdb-node document]
+(defn build-document [document]
   (let [document-id (UUID/randomUUID)
         ;; First: read document name from metadata
         document-name (resolve-from-metadata document document-name-key)
@@ -158,7 +157,10 @@
         document-tx (cxe/put* document)
         final-tx (reduce into [document-tx] sentence-txs)]
 
-    (cxe/submit-tx-sync xtdb-node final-tx)))
+    final-tx))
+
+(defn create-document [xtdb-node document]
+  (cxe/submit-tx-sync xtdb-node (build-document document)))
 
 
 (comment
@@ -186,7 +188,7 @@
 
 ")
 
-  (def xs (conllu-rest.conllu/parse-conllu-string data))
+  (def xs (conllu-rest.conllu/parse-conllu-string-with-python data))
 
   (ffirst xs)
 
