@@ -57,15 +57,18 @@
                  atomic-id
                  {(keyword name "value") value}))]))
 
-(defn build-field [token name]
-  (let [name-kwd (keyword name)
-        field-value (name-kwd token)
-        assoc-field? (associative-fields name-kwd)
-        txs (if assoc-field?
-              (reduce into (map #(build-associative name %) field-value))
-              (build-atomic name field-value))
-        ids (mapv (comp (keyword name "id") second) txs)]
-    [txs ids]))
+(defn build-field
+  ([token name]
+   (build-field token name identity))
+  ([token name field-xform]
+   (let [name-kwd (keyword name)
+         field-value (field-xform (name-kwd token))
+         assoc-field? (associative-fields name-kwd)
+         txs (if assoc-field?
+               (reduce into (map #(build-associative name %) field-value))
+               (build-atomic name field-value))
+         ids (mapv (comp (keyword name "id") second) txs)]
+     [txs ids])))
 
 (defn determine-token-type [{:keys [id]}]
   (cond (and (coll? id) (= (second id) "-")) :super
@@ -99,7 +102,7 @@
         [upos-txs [upos-id]] (build-field token "upos")
         [xpos-txs [xpos-id]] (build-field token "xpos")
         [feats-txs feats-ids] (build-field token "feats")
-        [head-txs [head-id]] (build-field token "head")
+        [head-txs [head-id]] (build-field token "head" #(token-id-map %))
         [deprel-txs [deprel-id]] (build-field token "deprel")
         [deps-txs deps-ids] (build-field token "deps")
         [misc-txs misc-ids] (build-field token "misc")
