@@ -169,8 +169,27 @@
 
     final-tx))
 
-(defn create-document [xtdb-node document]
+(defn create-document
+  "Call build-document and use its output to submit to a xtdb node"
+  [xtdb-node document]
   (cxe/submit-tx-sync xtdb-node (build-document document)))
+
+(defn ingest-conllu-file
+  "Given a system filepath, ingest it by reading it, parsing it, calling build-document on it,
+  and submitting it to xtdb. Note that this does not call xt/await-tx on the transaction, meaning
+  there are no guarantees about whether the changes will be indexed."
+  [xtdb-node filepath]
+  (let [parsed (->> filepath
+                    slurp
+                    parse-conllu-string)
+        transactions (build-document parsed)]
+    (xt/submit-tx xtdb-node transactions)
+    (log/info "Processed" (-> parsed first :metadata (->> (into {})) (get "newdoc id")))))
+
+(defn ingest-conllu-files
+  "Call ingest-conllu-file on a seq of filepaths."
+  [xtdb-node filepaths]
+  (doall (pmap (partial ingest-conllu-file xtdb-node) filepaths)))
 
 
 (comment
@@ -214,22 +233,11 @@
   (:metadata (first xs)))
 
 
-(defn ingest-conllu-file [xtdb-node filepath]
-  (let [parsed (->> filepath
-                    slurp
-                    parse-conllu-string)
-        transactions (build-document parsed)]
-    (xt/submit-tx xtdb-node transactions)
-    (log/info "Processed" (-> parsed first :metadata (->> (into {})) (get "newdoc id")))))
-
-(defn ingest-conllu-files [xtdb-node filepaths]
-  (doall (pmap (partial ingest-conllu-file xtdb-node) filepaths)))
-
 (comment
 
   (require '[conllu-rest.xtdb :refer [xtdb-node]])
 
-  (doseq [genre ["bio"#_#_#_#_#_#_ "fiction" "news" "academic" "interview" "voyage" "whow"]]
+  (doseq [genre ["bio" "fiction" "news" "academic" "interview" "voyage" "whow"]]
     (let [path (str "amalgum/amalgum/" genre "/dep")
           filenames (seq (.list (clojure.java.io/file path)))
           filepaths (sort (map #(str path "/" %) filenames))
