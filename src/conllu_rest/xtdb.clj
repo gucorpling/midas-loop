@@ -9,9 +9,9 @@
 (defn ^IXtdb start-lmdb-node [{:keys [db-dir http-server-port]}]
   (let [dirf #(str db-dir "/" %)]
     (xt/start-node
-      (-> {:xtdb/tx-log         {:kv-store {:xtdb/module `xtdb.rocksdb/->kv-store, :db-dir (dirf "tx-log")}}
-           :xtdb/document-store {:kv-store {:xtdb/module `xtdb.rocksdb/->kv-store, :db-dir (dirf "docs")}}
-           :xtdb/index-store    {:kv-store {:xtdb/module `xtdb.rocksdb/->kv-store, :db-dir (dirf "indexes")}}}
+      (-> {:xtdb/tx-log         {:kv-store {:xtdb/module `xtdb.lmdb/->kv-store, :db-dir (dirf "tx-log")}}
+           :xtdb/document-store {:kv-store {:xtdb/module `xtdb.lmdb/->kv-store, :db-dir (dirf "docs")}}
+           :xtdb/index-store    {:kv-store {:xtdb/module `xtdb.lmdb/->kv-store, :db-dir (dirf "indexes")}}}
           (cond-> http-server-port (assoc :xtdb.http-server/server {:port http-server-port}))))))
 
 (defn start-main-lmdb-node []

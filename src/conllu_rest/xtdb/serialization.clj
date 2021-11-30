@@ -117,7 +117,9 @@
      (str sb))))
 
 (comment
-  (def doc-id #uuid "db0d194f-c6a4-4f93-90c1-f8ca55932544")
+  (def doc-id
+    #uuid "db0d194f-c6a4-4f93-90c1-f8ca55932544"
+    )
 
   (spit "/tmp/bar" (serialize-document xtdb-node doc-id))
 

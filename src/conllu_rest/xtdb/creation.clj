@@ -8,7 +8,10 @@
       :token/form
       ...
       :token/misc"
-  (:require [conllu-rest.xtdb.easy :as cxe])
+  (:require [conllu-rest.xtdb.easy :as cxe]
+            [conllu-rest.conllu :refer [parse-conllu-string]]
+            [xtdb.api :as xt]
+            [clojure.tools.logging :as log])
   (:import (java.util UUID)))
 
 ;; TODO:
@@ -209,3 +212,39 @@
 
   xs
   (:metadata (first xs)))
+
+
+(defn ingest-conllu-file [xtdb-node filepath]
+  (let [parsed (->> filepath
+                    slurp
+                    parse-conllu-string)
+        transactions (build-document parsed)]
+    (xt/submit-tx xtdb-node transactions)
+    (log/info "Processed" (-> parsed first :metadata (->> (into {})) (get "newdoc id")))))
+
+(defn ingest-conllu-files [xtdb-node filepaths]
+  (doall (pmap (partial ingest-conllu-file xtdb-node) filepaths)))
+
+(comment
+
+  (require '[conllu-rest.xtdb :refer [xtdb-node]])
+
+  (doseq [genre ["bio"#_#_#_#_#_#_ "fiction" "news" "academic" "interview" "voyage" "whow"]]
+    (let [path (str "amalgum/amalgum/" genre "/dep")
+          filenames (seq (.list (clojure.java.io/file path)))
+          filepaths (sort (map #(str path "/" %) filenames))
+          docnum (atom 0)]
+
+      (ingest-conllu-files xtdb-node filepaths)
+      ))
+
+  (xt/q (xt/db xtdb-node)
+        '{:find    [(count ?d)]
+          :where   [[?d :token/id]]
+          :timeout 3000000})
+
+  )
+
+
+
+
