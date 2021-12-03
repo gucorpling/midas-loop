@@ -18,18 +18,8 @@
   (start-lmdb-node {:db-dir           (-> env ::config :main-db-dir)
                     :http-server-port (-> env ::config :http-server-port)}))
 
-(defn start-token-lmdb-node []
-  (start-lmdb-node {:db-dir (-> env ::config :token-db-dir)}))
-
 (defstate xtdb-node
   :start (let [node (start-main-lmdb-node)]
            (install-tx-fns! node)
-           ;; TODO: keep going with this for websocket sync
-           ;; (setup-listener! node)
            node)
   :stop (.close xtdb-node))
-
-(defstate xtdb-token-node
-  :start (let [node (start-token-lmdb-node)]
-           node)
-  :stop (.close xtdb-token-node))

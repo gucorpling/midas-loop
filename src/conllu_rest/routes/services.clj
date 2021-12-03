@@ -8,6 +8,7 @@
             [reitit.ring.middleware.parameters :as parameters]
             [conllu-rest.routes.conllu :refer [conllu-routes]]
             [conllu-rest.server.middleware.formats :as formats]
+            [conllu-rest.server.tokens :refer [wrap-token-auth]]
             [ring.util.http-response :refer :all]
             [clojure.java.io :as io]))
 
@@ -53,7 +54,8 @@
 
 
    ["/math"
-    {:swagger {:tags ["math"]}}
+    {:swagger {:tags ["math"]}
+     :middleware [wrap-token-auth]}
 
     ["/plus"
      {:get  {:summary    "plus with spec query parameters"

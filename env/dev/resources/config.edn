@@ -1,4 +1,5 @@
 {:conllu-rest.server.xtdb/config
  {:main-db-dir      "xtdb_data"
-  :token-db-dir     "xtdb_token_data"
-  :http-server-port 5128}}
+  :http-server-port 5128}
+ :conllu-rest.server.tokens/config
+ {:token-db-dir "xtdb_token_data"}}

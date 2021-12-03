@@ -1,4 +1,4 @@
 {:prod                           true
  :port                           3000
- :conllu-rest.server.xtdb/config {:main-db-dir  "xtdb_data"
-                                  :token-db-dir "xtdb_token_data"}}
+ :conllu-rest.server.xtdb/config {:main-db-dir  "xtdb_data"}
+ :conllu-rest.server.tokens/config {:token-db-dir "xtdb_token_data"}}
