@@ -1,8 +1,8 @@
-(ns conllu-rest.xtdb
+(ns conllu-rest.server.xtdb
   (:require [xtdb.api :as xt]
             [mount.core :refer [defstate]]
             [conllu-rest.xtdb.easy :refer [install-tx-fns!]]
-            [conllu-rest.config :refer [env]]
+            [conllu-rest.server.config :refer [env]]
             [clojure.java.io :as io])
   (:import [xtdb.api IXtdb]))
 
@@ -18,8 +18,8 @@
   (start-lmdb-node {:db-dir           (-> env ::config :main-db-dir)
                     :http-server-port (-> env ::config :http-server-port)}))
 
-(defn start-session-lmdb-node []
-  (start-lmdb-node {:db-dir (-> env ::config :session-db-dir)}))
+(defn start-token-lmdb-node []
+  (start-lmdb-node {:db-dir (-> env ::config :token-db-dir)}))
 
 (defstate xtdb-node
   :start (let [node (start-main-lmdb-node)]
@@ -29,7 +29,7 @@
            node)
   :stop (.close xtdb-node))
 
-(defstate xtdb-session-node
-  :start (let [node (start-session-lmdb-node)]
+(defstate xtdb-token-node
+  :start (let [node (start-token-lmdb-node)]
            node)
-  :stop (.close xtdb-session-node))
+  :stop (.close xtdb-token-node))

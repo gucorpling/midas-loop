@@ -1,4 +1,4 @@
-(ns conllu-rest.config
+(ns conllu-rest.server.config
   (:require [cprop.core :refer [load-config]]
             [cprop.source :as source]
             [mount.core :refer [args defstate]]))

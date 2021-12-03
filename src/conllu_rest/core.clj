@@ -1,8 +1,8 @@
 (ns conllu-rest.core
-  (:require [conllu-rest.handler :as handler]
-            [conllu-rest.nrepl :as nrepl]
+  (:require [conllu-rest.server.handler :as handler]
+            [conllu-rest.server.config :refer [env]]
+            [conllu-rest.util.nrepl :as nrepl]
             [luminus.http-server :as http]
-            [conllu-rest.config :refer [env]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.tools.logging :as log]
             [clojure.java.io :as io]

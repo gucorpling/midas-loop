@@ -9,7 +9,7 @@
       ...
       :token/misc"
   (:require [conllu-rest.xtdb.easy :as cxe]
-            [conllu-rest.conllu :refer [parse-conllu-string]]
+            [conllu-rest.util.conllu :refer [parse-conllu-string]]
             [xtdb.api :as xt]
             [clojure.tools.logging :as log])
   (:import (java.util UUID)))
@@ -240,7 +240,7 @@
 
   (require '[conllu-rest.xtdb :refer [xtdb-node]])
 
-  (doseq [genre ["bio" "fiction" "news" "academic" "interview" "voyage" "whow"]]
+  (doseq [genre [#_"bio" "fiction" "news" "academic" "interview" "voyage" "whow"]]
     (let [path (str "amalgum/amalgum/" genre "/dep")
           filenames (seq (.list (clojure.java.io/file path)))
           filepaths (sort (map #(str path "/" %) filenames))

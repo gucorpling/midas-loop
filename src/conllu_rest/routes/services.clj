@@ -7,7 +7,7 @@
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.parameters :as parameters]
             [conllu-rest.routes.conllu :refer [conllu-routes]]
-            [conllu-rest.middleware.formats :as formats]
+            [conllu-rest.server.middleware.formats :as formats]
             [ring.util.http-response :refer :all]
             [clojure.java.io :as io]))
 

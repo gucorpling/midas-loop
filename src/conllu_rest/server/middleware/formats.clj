@@ -1,4 +1,4 @@
-(ns conllu-rest.middleware.formats
+(ns conllu-rest.server.middleware.formats
   (:require [luminus-transit.time :as time]
             [muuntaja.core :as m]))
 

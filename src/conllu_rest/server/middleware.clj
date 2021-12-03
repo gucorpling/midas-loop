@@ -1,11 +1,11 @@
-(ns conllu-rest.middleware
+(ns conllu-rest.server.middleware
   (:require [clojure.tools.logging :as log]
             [ring.middleware.anti-forgery :refer [wrap-anti-forgery]]
             [ring.middleware.flash :refer [wrap-flash]]
             [ring.adapter.undertow.middleware.session :refer [wrap-session]]
             [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
             [muuntaja.middleware :refer [wrap-format wrap-params]]
-            [conllu-rest.config :refer [env]]
+            [conllu-rest.server.config :refer [env]]
             [conllu-rest.env :refer [defaults]]
             [conllu-rest.common :refer [error-response]]))
 

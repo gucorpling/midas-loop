@@ -1,4 +1,4 @@
-(ns conllu-rest.nrepl
+(ns conllu-rest.util.nrepl
   (:require [nrepl.server :as nrepl]
             [clojure.tools.logging :as log]))
 

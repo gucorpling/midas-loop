@@ -1,5 +1,5 @@
-(ns conllu-rest.handler
-  (:require [conllu-rest.middleware :as middleware]
+(ns conllu-rest.server.handler
+  (:require [conllu-rest.server.middleware :as middleware]
             [conllu-rest.common :refer [error-response]]
             [conllu-rest.routes.services :refer [service-routes]]
             [reitit.swagger-ui :as swagger-ui]

@@ -1,9 +1,9 @@
-(ns conllu-rest.handler-test
+(ns conllu-rest.server.handler-test
   (:require
     [clojure.test :refer :all]
     [ring.mock.request :refer :all]
-    [conllu-rest.handler :refer :all]
-    [conllu-rest.middleware.formats :as formats]
+    [conllu-rest.server.handler :refer :all]
+    [conllu-rest.server.middleware.formats :as formats]
     [muuntaja.core :as m]
     [mount.core :as mount]))
 
@@ -13,8 +13,8 @@
 (use-fixtures
   :once
   (fn [f]
-    (mount/start #'conllu-rest.config/env
-                 #'conllu-rest.handler/app-routes)
+    (mount/start #'conllu-rest.server.config/env
+                 #'conllu-rest.server.handler/app-routes)
     (f)))
 
 (deftest test-app
