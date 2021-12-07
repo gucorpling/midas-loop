@@ -19,7 +19,7 @@
                  [mount "0.1.16"]
                  [nrepl "0.8.3"]
                  [org.clojure/clojure "1.10.3"]
-                 [org.clojure/tools.cli "1.0.206"]
+                 [cli-matic "0.4.3"]
                  [org.clojure/tools.logging "1.1.0"]
                  [org.webjars.npm/bulma "0.9.2"]
                  [org.webjars.npm/material-icons "1.0.0"]
