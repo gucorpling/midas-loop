@@ -192,8 +192,7 @@
 (defn ingest-conllu-files
   "Call ingest-conllu-file on a seq of filepaths."
   [xtdb-node filepaths]
-  (doall (pmap (partial ingest-conllu-file xtdb-node) filepaths))
-  :ok)
+  (doall (pmap (partial ingest-conllu-file xtdb-node) filepaths)))
 
 
 (comment

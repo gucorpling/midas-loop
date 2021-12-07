@@ -51,12 +51,12 @@
 (defn ingest [args]
   (mount/start-with-args args)
   (log/info (:filepaths args))
-  (when (= :ok (ingest-conllu-files xtdb-node (:filepaths args)))
-    (log/info (str "Successfully ingested " (count (:filepaths args)) " documents:"))
-    (println "\nBegin document manifest:\n")
-    (doseq [name (:filepaths args)]
-      (println (str "\t- " name)))
-    (println "\nEnd document manifest.\n")))
+  (ingest-conllu-files xtdb-node (:filepaths args))
+  (log/info (str "Successfully ingested " (count (:filepaths args)) " documents:"))
+  (println "\nBegin document manifest:\n")
+  (doseq [name (:filepaths args)]
+    (println (str "\t- " name)))
+  (println "\nEnd document manifest.\n"))
 
 (def cli-config
   {:app         {:command     "conllu-rest"
