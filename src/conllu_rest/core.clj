@@ -1,6 +1,8 @@
 (ns conllu-rest.core
   (:require [conllu-rest.server.handler :as handler]
             [conllu-rest.server.config :refer [env]]
+            [conllu-rest.server.xtdb :refer [xtdb-node]]
+            [conllu-rest.xtdb.creation :refer [ingest-conllu-files]]
             [conllu-rest.util.nrepl :as nrepl]
             [luminus.http-server :as http]
             [clojure.tools.logging :as log]
@@ -46,15 +48,42 @@
     (log/info component "stopped"))
   (shutdown-agents))
 
+(defn ingest [args]
+  (mount/start-with-args args)
+  (log/info (:filepaths args))
+  (when (= :ok (ingest-conllu-files xtdb-node (:filepaths args)))
+    (log/info (str "Successfully ingested " (count (:filepaths args)) " documents:"))
+    (println "\nBegin document manifest:\n")
+    (doseq [name (:filepaths args)]
+      (println (str "\t- " name)))
+    (println "\nEnd document manifest.\n")))
+
 (def cli-config
   {:app         {:command     "conllu-rest"
                  :description "https://github.com/lgessler/conllu-rest"
                  :version     "0.0.1"}
    :global-opts []
-   :commands    [{:command     "run" :short "r"
+   :commands    [
+                 ;; main method--run the HTTP server
+                 {:command     "run"
+                  :short       "r"
                   :description ["Start the web app and begin listening for requests."]
                   :opts        [{:option "port" :short "p" :as "port for HTTP server" :type :int}]
                   :runs        mount/start-with-args
+                  :on-shutdown stop-app}
+
+                 ;; read in conllu files
+                 {:command     "ingest"
+                  :short       "i"
+                  :description ["Read and ingest CoNLL-U files."
+                                ""
+                                "NOTE: you should only run this command while your server is shut down."]
+                  :opts        [{:option   "filepaths"
+                                 :short    0
+                                 :as       "paths to CoNLL-U files to ingest"
+                                 :type     :string
+                                 :multiple true}]
+                  :runs        ingest
                   :on-shutdown stop-app}]})
 
 
@@ -79,7 +108,7 @@
         (U/printErr (helpFn config subcmd))))
 
     ;; For some reason, the run subcommand exits immediately when combined with cli-matic. Use this as a workaround.
-    (if (#{"run" "r"} (first args))
+    (if (and (#{"run" "r"} (first args)) (= stderr 0))
       (log/info "Started server successfully")
       (P/exit-script retval))))
 
