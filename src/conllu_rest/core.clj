@@ -108,7 +108,8 @@
         (U/printErr (helpFn config subcmd))))
 
     ;; For some reason, the run subcommand exits immediately when combined with cli-matic. Use this as a workaround.
-    (if (and (#{"run" "r"} (first args)) (= stderr 0))
+    (log/info result)
+    (if (and (#{"run" "r"} (first args)) (= retval 0))
       (log/info "Started server successfully")
       (P/exit-script retval))))
 
