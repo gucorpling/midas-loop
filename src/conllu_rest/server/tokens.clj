@@ -1,5 +1,5 @@
 (ns conllu-rest.server.tokens
-  (:require [conllu-rest.server.xtdb :refer [start-lmdb-node]]
+  (:require [conllu-rest.server.xtdb :refer [start-standalone-xtdb-node]]
             [conllu-rest.server.config :refer [env]]
             [conllu-rest.xtdb.easy :as cxe]
             [ring.util.http-response :as resp]
@@ -11,11 +11,11 @@
   (:import (java.security SecureRandom)
            (java.util Base64)))
 
-(defn start-token-lmdb-node []
-  (start-lmdb-node {:db-dir (-> env ::config :token-db-dir)}))
+(defn start-token-node []
+  (start-standalone-xtdb-node {:db-dir (-> env ::config :token-db-dir)}))
 
 (defstate xtdb-token-node
-  :start (let [node (start-token-lmdb-node)]
+  :start (let [node (start-token-node)]
            node)
   :stop (.close xtdb-token-node))
 

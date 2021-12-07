@@ -238,13 +238,12 @@
 
 (comment
 
-  (require '[conllu-rest.xtdb :refer [xtdb-node]])
+  (require '[conllu-rest.server.xtdb :refer [xtdb-node]])
 
-  (doseq [genre [#_"bio" "fiction" "news" "academic" "interview" "voyage" "whow"]]
+  (doseq [genre ["bio" "fiction" "news" "academic" "interview" "voyage" "whow"]]
     (let [path (str "amalgum/amalgum/" genre "/dep")
           filenames (seq (.list (clojure.java.io/file path)))
-          filepaths (sort (map #(str path "/" %) filenames))
-          docnum (atom 0)]
+          filepaths (sort (map #(str path "/" %) filenames))]
 
       (ingest-conllu-files xtdb-node filepaths)
       ))

@@ -1,5 +1,5 @@
 (ns conllu-rest.xtdb.serialization
-  (:require [conllu-rest.xtdb :refer [xtdb-node]]
+  (:require [conllu-rest.server.xtdb :refer [xtdb-node]]
             [xtdb.api :as xt]
             [conllu-rest.xtdb.easy :as cxe]))
 
