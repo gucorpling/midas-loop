@@ -52,7 +52,6 @@
 (defn wrap-token-auth [handler]
   (let [auth-check (fn [handler]
                      (fn [request]
-                       (spit "/tmp/request" request)
                        (if (authenticated? request)
                          (handler request)
                          (resp/unauthorized {:error "Unauthorized. Provide a valid token."}))))]
