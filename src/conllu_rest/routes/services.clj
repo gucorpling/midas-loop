@@ -8,16 +8,24 @@
             [reitit.ring.middleware.parameters :as parameters]
             [conllu-rest.routes.conllu :refer [conllu-routes]]
             [conllu-rest.server.middleware.formats :as formats]
-            [conllu-rest.server.tokens :refer [wrap-token-auth]]
+            [conllu-rest.server.xtdb :refer [xtdb-node]]
             [ring.util.http-response :refer :all]
             [clojure.java.io :as io]))
+
+(defn include-database
+  [xtdb-node]
+  {:name ::xtdb
+   :wrap (fn [handler]
+           (fn [request]
+             (handler (assoc request :xtdb xtdb-node))))})
 
 (defn service-routes []
   ["/api"
    {:coercion   spec-coercion/coercion
     :muuntaja   formats/instance
     :swagger    {:id ::api}
-    :middleware [;; query-params & form-params
+    :middleware [(include-database xtdb-node)
+                 ;; query-params & form-params
                  parameters/parameters-middleware
                  ;; content-negotiation
                  muuntaja/format-negotiate-middleware
@@ -54,8 +62,7 @@
 
 
    ["/math"
-    {:swagger {:tags ["math"]}
-     :middleware [wrap-token-auth]}
+    {:swagger {:tags ["math"]}}
 
     ["/plus"
      {:get  {:summary    "plus with spec query parameters"
