@@ -1,6 +1,8 @@
-(ns conllu-rest.util.nrepl
-  (:require [nrepl.server :as nrepl]
-            [clojure.tools.logging :as log]))
+(ns conllu-rest.server.repl
+  (:require [mount.core :as mount]
+            [nrepl.server :as nrepl]
+            [clojure.tools.logging :as log]
+            [conllu-rest.server.config :refer [env]]))
 
 (defn start
   "Start a network repl for debugging on specified port followed by
@@ -24,3 +26,12 @@
 (defn stop [server]
   (nrepl/stop-server server)
   (log/info "nREPL server stopped"))
+
+(mount/defstate ^{:on-reload :noop} repl-server
+                :start
+                (when (env :nrepl-port)
+                  (start {:bind (env :nrepl-bind)
+                                :port (env :nrepl-port)}))
+                :stop
+                (when repl-server
+                  (stop repl-server)))

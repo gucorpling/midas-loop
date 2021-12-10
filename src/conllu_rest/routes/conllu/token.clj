@@ -6,6 +6,7 @@
   (:import (java.util UUID)))
 
 
+;; should the backend actually be pluggable? to support e.g. a filesystem impl
 (defn get-token [{:keys [path-params xtdb] :as request}]
   (let [id (:id path-params)]
     (if-not (common/uuid-string? id)

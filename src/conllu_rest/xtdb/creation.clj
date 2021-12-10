@@ -9,7 +9,7 @@
       ...
       :token/misc"
   (:require [conllu-rest.xtdb.easy :as cxe]
-            [conllu-rest.util.conllu :refer [parse-conllu-string]]
+            [conllu-rest.util.conllu-parser :refer [parse-conllu-string]]
             [xtdb.api :as xt]
             [clojure.tools.logging :as log])
   (:import (java.util UUID)))

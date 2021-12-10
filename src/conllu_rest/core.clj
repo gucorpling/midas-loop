@@ -1,12 +1,10 @@
 (ns conllu-rest.core
-  (:require [conllu-rest.server.handler :as handler]
-            [conllu-rest.server.config :refer [env]]
+  (:require [conllu-rest.server.config :refer [env]]
             [conllu-rest.server.xtdb :refer [xtdb-node]]
             [conllu-rest.xtdb.creation :refer [ingest-conllu-files]]
-            [conllu-rest.util.nrepl :as nrepl]
-            [luminus.http-server :as http]
+            [conllu-rest.server.http]
+            [conllu-rest.server.repl]
             [clojure.tools.logging :as log]
-            [clojure.java.io :as io]
             [mount.core :as mount]
             [cli-matic.core :refer [run-cmd*]]
             [cli-matic.utils-v2 :as U2]
@@ -22,26 +20,6 @@
       (log/error {:what      :uncaught-exception
                   :exception ex
                   :where     (str "Uncaught exception on" (.getName thread))}))))
-
-(mount/defstate ^{:on-reload :noop} http-server
-  :start
-  (http/start
-    (-> env
-        (update :io-threads #(or % (* 2 (.availableProcessors (Runtime/getRuntime)))))
-        (assoc :handler (handler/app))
-        (update :port #(or (-> env :options :port) %))
-        (select-keys [:handler :host :port])))
-  :stop
-  (http/stop http-server))
-
-(mount/defstate ^{:on-reload :noop} repl-server
-  :start
-  (when (env :nrepl-port)
-    (nrepl/start {:bind (env :nrepl-bind)
-                  :port (env :nrepl-port)}))
-  :stop
-  (when repl-server
-    (nrepl/stop repl-server)))
 
 (defn stop-app []
   (doseq [component (:stopped (mount/stop))]

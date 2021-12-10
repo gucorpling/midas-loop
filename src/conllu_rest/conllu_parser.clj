@@ -1,4 +1,4 @@
-(ns conllu-rest.util.conllu
+(ns conllu-rest.util.conllu-parser
   "conllu parsing code"
   (:require [clojure.string :as string]))
 
