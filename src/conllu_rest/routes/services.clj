@@ -42,7 +42,7 @@
                  ;; multipart
                  multipart/multipart-middleware]}
 
-   conllu-routes
+   (conllu-routes)
 
    ;; swagger documentation
    ["" {:no-doc  true

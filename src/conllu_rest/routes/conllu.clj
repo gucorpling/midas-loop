@@ -15,13 +15,13 @@
             [xtdb.api :as xt]))
 
 
-(def conllu-routes
+(defn conllu-routes []
   ["/conllu"
    {:swagger    {:tags ["conllu"]}
     :middleware [#_wrap-token-auth
                  ]}
 
-   token-routes
+   (token-routes)
 
    ["/files"
     ["/upload"
