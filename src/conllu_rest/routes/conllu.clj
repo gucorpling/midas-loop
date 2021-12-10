@@ -8,7 +8,7 @@
             [conllu-rest.common :refer [error-response nyi-response]]
             [conllu-rest.server.xtdb :refer [xtdb-node]]
             [conllu-rest.server.tokens :refer [wrap-token-auth]]
-            [conllu-rest.util.conllu-parser :refer [parse-conllu-string]]
+            [conllu-rest.conllu-parser :refer [parse-conllu-string]]
             [conllu-rest.xtdb.creation :refer [create-document build-document]]
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.routes.conllu.token :refer [token-routes]]
