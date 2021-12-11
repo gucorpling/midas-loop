@@ -7,25 +7,27 @@
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.parameters :as parameters]
             [conllu-rest.routes.conllu :refer [conllu-routes]]
-            [conllu-rest.server.middleware.formats :as formats]
-            [conllu-rest.server.xtdb :refer [xtdb-node]]
             [ring.util.http-response :refer :all]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [muuntaja.core :as m]
+            [luminus-transit.time :as time]))
 
-(defn include-database
-  [xtdb-node]
-  {:name ::xtdb
-   :wrap (fn [handler]
-           (fn [request]
-             (handler (assoc request :xtdb xtdb-node))))})
+(def muuntaja-instance
+  (m/create
+    (-> m/default-options
+        (update-in
+          [:formats "application/transit+json" :decoder-opts]
+          (partial merge time/time-deserialization-handlers))
+        (update-in
+          [:formats "application/transit+json" :encoder-opts]
+          (partial merge time/time-serialization-handlers)))))
 
 (defn service-routes []
   ["/api"
    {:coercion   spec-coercion/coercion
-    :muuntaja   formats/instance
+    :muuntaja   muuntaja-instance
     :swagger    {:id ::api}
-    :middleware [(include-database xtdb-node)
-                 ;; query-params & form-params
+    :middleware [;; query-params & form-params
                  parameters/parameters-middleware
                  ;; content-negotiation
                  muuntaja/format-negotiate-middleware

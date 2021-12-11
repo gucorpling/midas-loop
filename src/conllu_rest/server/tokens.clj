@@ -1,4 +1,14 @@
 (ns conllu-rest.server.tokens
+  "Implementation of a simple secret token-based authentication/authorization scheme. A high-entropy token
+  is minted against a user identified by a name/email combo, and endpoints secured by this scheme must have
+  the following in their header:
+
+      Authorization: Token secret=I83A-il5lyOy1c7WmYXatuzvjRwiH22NYVzC0n7BGNPaPWyVo2_ydpeL2EpG8lH7
+
+  Note that the token always begins with `secret=` to remind the user that this is not to be shared, and
+  that 48 characters follow.
+
+  BE WARNED: this is probably INSECURE!!! Use at your own risk. Consider replacing with a JWT implementation."
   (:require [conllu-rest.server.xtdb :refer [start-standalone-xtdb-node]]
             [conllu-rest.server.config :refer [env]]
             [conllu-rest.xtdb.easy :as cxe]
@@ -45,8 +55,8 @@
   (cxe/entity node id))
 
 (defstate buddy-backend
-  :start (let [auth-fn (fn [request token]
-                         (read-token xtdb-token-node (keyword token)))]
+  :start (let [auth-fn (fn [{:keys [token-node]} token]
+                         (read-token token-node (keyword token)))]
            (backends/token {:authfn auth-fn})))
 
 (defn wrap-token-auth [handler]

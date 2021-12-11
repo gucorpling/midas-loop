@@ -7,7 +7,15 @@
             [muuntaja.middleware :refer [wrap-format wrap-params]]
             [conllu-rest.server.config :refer [env]]
             [conllu-rest.env :refer [defaults]]
-            [conllu-rest.common :refer [error-response]]))
+            [conllu-rest.common :refer [error-response]]
+            [conllu-rest.server.xtdb :refer [xtdb-node]]
+            [conllu-rest.server.tokens :refer [xtdb-token-node]]))
+
+
+(defn include-database
+  [handler k xtdb-node]
+  (fn [request]
+    (handler (assoc request k xtdb-node))))
 
 (defn wrap-internal-error [handler]
   (fn [req]
@@ -21,6 +29,8 @@
 
 (defn wrap-base [handler]
   (-> ((:middleware defaults) handler)
+      (include-database :node xtdb-node)
+      (include-database :token-node xtdb-token-node)
       wrap-flash
       (wrap-session {})
       (wrap-defaults

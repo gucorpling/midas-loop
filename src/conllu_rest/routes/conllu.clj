@@ -18,8 +18,7 @@
 (defn conllu-routes []
   ["/conllu"
    {:swagger    {:tags ["conllu"]}
-    :middleware [#_wrap-token-auth
-                 ]}
+    :middleware [#_wrap-token-auth]}
 
    (token-routes)
 
