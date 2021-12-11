@@ -1,7 +1,10 @@
 (ns conllu-rest.routes.conllu.common
   (:require [clojure.walk :refer [postwalk]]
+            [ring.util.http-response :refer :all]
             [conllu-rest.xtdb.reads :as cxr]
-            [ring.util.http-response :refer :all]))
+            [conllu-rest.xtdb.easy :as cxe]
+            [conllu-rest.common :as common])
+  (:import (java.util UUID)))
 
 
 (defn- remove-namespaces [m]
@@ -23,3 +26,12 @@
         m (remove-namespaces m)]
     (ok m)))
 
+(defn get-handler [{:keys [path-params node] :as request}]
+  (let [id (:id path-params)]
+    (if-not (common/uuid-string? id)
+      (bad-request "ID must be a valid java.util.UUID")
+      (let [id (UUID/fromString id)
+            result (cxe/entity node id)]
+        (if (nil? result)
+          (not-found)
+          (ok* node result))))))

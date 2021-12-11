@@ -11,6 +11,9 @@
             [conllu-rest.conllu-parser :refer [parse-conllu-string]]
             [conllu-rest.xtdb.creation :refer [create-document build-document]]
             [conllu-rest.xtdb.easy :as cxe]
+            [conllu-rest.routes.conllu.document :refer [document-routes]]
+            [conllu-rest.routes.conllu.sentence :refer [sentence-routes]]
+            [conllu-rest.routes.conllu.conllu-metadata :refer [conllu-metadata-routes]]
             [conllu-rest.routes.conllu.token :refer [token-routes]]
             [xtdb.api :as xt]))
 
@@ -20,6 +23,9 @@
    {:swagger    {:tags ["conllu"]}
     :middleware [#_wrap-token-auth]}
 
+   (document-routes)
+   (sentence-routes)
+   (conllu-metadata-routes)
    (token-routes)
 
    ["/files"
