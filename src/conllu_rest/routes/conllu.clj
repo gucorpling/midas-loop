@@ -15,6 +15,8 @@
             [conllu-rest.routes.conllu.sentence :refer [sentence-routes]]
             [conllu-rest.routes.conllu.conllu-metadata :refer [conllu-metadata-routes]]
             [conllu-rest.routes.conllu.token :refer [token-routes]]
+            [conllu-rest.common :as common]
+            [conllu-rest.xtdb.serialization :refer [serialize-document]]
             [xtdb.api :as xt]))
 
 
@@ -45,13 +47,18 @@
                                   :body   {:name (:filename file)
                                            :size (:size file)}}))))}}]
 
-    ["/download"
-     {:get {:summary "downloads a file"
-            :swagger {:produces ["image/png"]}
-            :handler nyi-response
-            #_(fn [_]
-                {:status  200
-                 :headers {"Content-Type" "image/png"}
-                 :body    (-> "public/img/warning_clojure.png"
-                              (io/resource)
-                              (io/input-stream))})}}]]])
+    ["/download/:id"
+     {:get {:summary    "Downloads a file as .conllu"
+            :swagger    {:produces ["text/x-conllu"]}
+            :parameters {:path {:id uuid?}}
+            :handler    (fn [{:keys [path-params node]}]
+                          (let [id (:id path-params)]
+                            (if-let [uuid (common/parse-uuid id)]
+                              (let [result (cxe/entity node uuid)]
+                                (if (nil? result)
+                                  (not-found)
+                                  {:status  200
+                                   :headers {"Content-Type"        "application/x-conllu"
+                                             "Content-Disposition" (str "attachment; filename=" id ".conllu")}
+                                   :body    (serialize-document node uuid)}))
+                              (bad-request "ID must be a valid java.util.UUID"))))}}]]])
