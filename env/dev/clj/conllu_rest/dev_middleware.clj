@@ -5,4 +5,4 @@
 (defn wrap-dev [handler]
   (-> handler
       wrap-reload
-      (wrap-exceptions {:app-namespaces ['conllu-rest]})))
+      (wrap-exceptions )))
