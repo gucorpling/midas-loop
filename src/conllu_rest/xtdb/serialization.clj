@@ -116,15 +116,3 @@
 
      (doall (map #(serialize-sentence node sb %) sentences))
      (str sb))))
-
-(comment
-  (def doc-id
-    #uuid "03dad8fc-abc7-42f5-aeba-bfcfe6b6c4a5"
-    )
-
-  (spit "/tmp/bar" (serialize-document xtdb-node doc-id))
-
-  (serialize-document xtdb-node doc-id)
-
-
-  )
