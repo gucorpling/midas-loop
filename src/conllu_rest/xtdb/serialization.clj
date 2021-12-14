@@ -3,18 +3,21 @@
             [xtdb.api :as xt]
             [conllu-rest.xtdb.easy :as cxe]))
 
-(defn serialize-atomic [node token name]
-  (or (->> token ((keyword "token" name)) (cxe/entity node) ((keyword name "value")))
-      "_"))
+(defn serialize-atomic
+  ([node token name]
+   (serialize-atomic node token name identity))
+  ([node token name val-xform]
+   (or (->> token ((keyword "token" name)) (cxe/entity node) ((keyword name "value")) val-xform)
+       "_")))
 
 (defn serialize-assoc
   ([node token name]
-   (serialize-assoc node token name "="))
-  ([node token name kv-sep]
+   (serialize-assoc node token name "=" identity))
+  ([node token name kv-sep key-xform]
    (let [kv-records (map #(cxe/entity node %) ((keyword "token" name) token))
          k-key (keyword name "key")
          v-key (keyword name "value")
-         kv-strings (map #(str (k-key %) kv-sep (v-key %)) kv-records)]
+         kv-strings (map #(str (key-xform (k-key %)) kv-sep (v-key %)) kv-records)]
      (if (empty? kv-strings)
        "_"
        (clojure.string/join "|" kv-strings)))))
@@ -40,16 +43,16 @@
      (.append sb (serialize-atomic node token "xpos"))
      (.append sb "\t")
      ;; MORPH
-     (.append sb (serialize-assoc node token "morph"))
+     (.append sb (serialize-assoc node token "feats"))
      (.append sb "\t")
      ;; HEAD
-     (.append sb (serialize-atomic node token "head"))
+     (.append sb (serialize-atomic node token "head" #(id-map %)))
      (.append sb "\t")
      ;; DEPREL
      (.append sb (serialize-atomic node token "deprel"))
      (.append sb "\t")
      ;; DEPS
-     (.append sb (serialize-assoc node token "deps" ":"))
+     (.append sb (serialize-assoc node token "deps" ":" #(id-map %)))
      (.append sb "\t")
      ;; DEPS
      (.append sb (serialize-assoc node token "misc"))
@@ -118,9 +121,12 @@
 
 (comment
   (def doc-id
-    #uuid "76f898b3-aac1-4e23-ae3e-141318e55b68"
+    #uuid "03dad8fc-abc7-42f5-aeba-bfcfe6b6c4a5"
     )
 
   (spit "/tmp/bar" (serialize-document xtdb-node doc-id))
+
+  (serialize-document xtdb-node doc-id)
+
 
   )
