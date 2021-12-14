@@ -30,9 +30,9 @@
   (let [v (string/trim v)
         groups (or (get-groups super-token-re v)
                    (get-groups empty-token-re v))]
-    (if groups
-      groups
-      (Long/parseLong v))))
+    (cond (some? groups) groups
+          (= v "_") nil
+          :else (Long/parseLong v))))
 
 (defn parse-atomic [v] (if (= v "_") nil v))
 
