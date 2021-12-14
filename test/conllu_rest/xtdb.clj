@@ -71,3 +71,32 @@
         (is (= (clojure.string/trim data)
                (clojure.string/trim (cxs/serialize-document node doc-id)))))
       )))
+
+(deftest sentence-splitting
+  (let [parsed-data (parser/parse-conllu-string data)
+        _ (cxc/create-document node parsed-data)
+        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "Juan"]]}))
+        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "frequently"]]}))
+        last-sent-id (ffirst (xt/q (xt/db node) '{:find  [?s]
+                                                  :where [[?s :sentence/conllu-metadata ?cm]
+                                                          [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-3"]]}))
+        first-sent-id (ffirst (xt/q (xt/db node) '{:find  [?s]
+                                                   :where [[?s :sentence/conllu-metadata ?cm]
+                                                           [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-1"]]}))]
+    (testing "Splitting a sentence fails if the token is at the beginning of a sentence"
+      (= :error (:status (cxq/split-sentence node juan-token-id))))
+
+    (testing "Splitting a sentence is OK if the token is not at the beginning of a sentence"
+      (= :ok (:status (cxq/split-sentence node freq-token-id)))
+      (= 3 (count (cxe/find-entities node {:sentence/id '_}))))
+
+    (testing "Merging a sentence fails if it's the last sentence in a document"
+      (= :error (:status (cxq/merge-sentence-right node last-sent-id))))
+
+    (testing "Merging a sentence OK if it's the last sentence in a document"
+      (= :ok (:status (cxq/merge-sentence-right node first-sent-id)))
+      (= 2 (count (cxe/find-entities node {:sentence/id '_}))))))
