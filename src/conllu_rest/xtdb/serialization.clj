@@ -34,10 +34,10 @@
      (.append sb (serialize-atomic node token "lemma"))
      (.append sb "\t")
      ;; XPOS
-     (.append sb (serialize-atomic node token "xpos"))
+     (.append sb (serialize-atomic node token "upos"))
      (.append sb "\t")
      ;; UPOS
-     (.append sb (serialize-atomic node token "upos"))
+     (.append sb (serialize-atomic node token "xpos"))
      (.append sb "\t")
      ;; MORPH
      (.append sb (serialize-assoc node token "morph"))
@@ -118,7 +118,7 @@
 
 (comment
   (def doc-id
-    #uuid "db0d194f-c6a4-4f93-90c1-f8ca55932544"
+    #uuid "76f898b3-aac1-4e23-ae3e-141318e55b68"
     )
 
   (spit "/tmp/bar" (serialize-document xtdb-node doc-id))
