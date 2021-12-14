@@ -46,6 +46,7 @@
              (for [pair kv-pairs]
                (let [index (string/index-of pair kv-sep)
                      key (subs pair 0 index)
+                     key (if (= kv-sep ":") (parse-id key) key)
                      value (subs pair (inc index))]
                  [key value])))))))
 
@@ -60,7 +61,7 @@
      :upos   (parse-atomic (get cols 3))
      :xpos   (parse-atomic (get cols 4))
      :feats  (parse-assoc (get cols 5))
-     :head   (parse-atomic (get cols 6))
+     :head   (parse-atomic (parse-id (get cols 6)))
      :deprel (parse-atomic (get cols 7))
      :deps   (parse-assoc ":" (get cols 8))
      :misc   (parse-assoc (get cols 9))}))
