@@ -96,7 +96,36 @@
 (defn sentence-from-token [node id]
   (parent node :sentence/tokens id))
 
-;; TODO: deprel, head, and deps columns need to be changed when this happens
+(defn remove-invalid-deps
+  "Checks head, deprel, and deps and removes any entries that point to tokens which are not in token-ids.
+  Useful for post-processing a sentence split. Returns a transaction vector--no side effects.."
+  [node token-ids]
+  (let [tokens (map #(xt/pull (xt/db node)
+                              [:token/id
+                               {:token/head [:head/value :head/id]}
+                               {:token/deprel [:deprel/value :deprel/id]}
+                               {:token/deps [:deps/key :deps/value :deps/id]}]
+                              %)
+                    token-ids)
+        txs (atom [])]
+    (doseq [token tokens]
+      (let [token-ids (conj (set token-ids) :root)
+            {head-id :head/id head-value :head/value} (:token/head token)
+            {deprel-id :deprel/id} (:token/deprel token)]
+        (when-not (token-ids head-value)
+          (swap! txs conj (cxe/put* (assoc (cxe/entity node head-id) :head/value nil)))
+          (swap! txs conj (cxe/put* (assoc (cxe/entity node deprel-id) :deprel/value nil))))
+
+        (let [orig-deps (:token/deps token)
+              new-deps (atom orig-deps)]
+          (doseq [{deps-id :deps/id head-id :deps/key :as dep} (:token/deps token)]
+            (when-not (token-ids head-id)
+              (swap! txs conj (cxe/delete* deps-id))
+              (swap! new-deps #(filterv (fn [e] (not= (:deps/id e) deps-id)) %))))
+          (when-not (= @new-deps orig-deps)
+            (swap! txs conj (cxe/put* (assoc (cxe/entity node (:token/id token)) :token/deps @new-deps)))))))
+    @txs))
+
 (defn split-sentence
   "Split an existing sentence at a given token, including the token in the new sentence to the right and
   keeping the existing sentence's record for the tokens to the left. Error conditions:
@@ -123,20 +152,23 @@
       (write-error (str "Token " token-id " is already at the beginning of a sentence."))
 
       :else
-      (let [updated-sentence (-> sentence
-                                         (assoc :sentence/tokens (remove-after tokens token-id)))
+      (let [left-tokens (remove-after tokens token-id)
+            right-tokens (take-from tokens token-id)
+            updated-sentence (-> sentence
+                                 (assoc :sentence/tokens left-tokens))
             new-sentence-id (UUID/randomUUID)
             new-sentence-record (-> sentence
-                                    (assoc :sentence/tokens (take-from tokens token-id))
+                                    (assoc :sentence/tokens right-tokens)
                                     (assoc :sentence/id new-sentence-id)
                                     (assoc :xt/id new-sentence-id)
                                     ;; TODO: we want to be more careful than this
                                     (dissoc :sentence/conllu-metadata))
             updated-document (-> (cxe/entity node document-id)
-                                         (update :document/sentences insert-after sentence-id new-sentence-id))
+                                 (update :document/sentences insert-after sentence-id new-sentence-id))
             txs [(cxe/put* updated-sentence)
                  (cxe/put* new-sentence-record)
-                 (cxe/put* updated-document)]]
+                 (cxe/put* updated-document)]
+            txs (concat txs (remove-invalid-deps node left-tokens) (remove-invalid-deps node right-tokens))]
         (if (cxe/submit-tx-sync node txs)
           (assoc (write-ok) :new-sentence-id new-sentence-id)
           (write-error "Internal XTDB error"))))))
@@ -165,9 +197,9 @@
             other-sentence (cxe/entity node other-sentence-id)
             new-sentence-list (remove #(= % other-sentence-id) sentences)
             updated-document-record (-> document
-                                         (assoc :document/sentences new-sentence-list))
+                                        (assoc :document/sentences new-sentence-list))
             updated-sentence-record (-> (cxe/entity node sentence-id)
-                                         (update :sentence/tokens concat (:sentence/tokens other-sentence)))
+                                        (update :sentence/tokens into (:sentence/tokens other-sentence)))
             ;; TODO: keep any meta from the other sentence?
             txs [(cxe/put* updated-document-record)
                  (cxe/put* updated-sentence-record)
@@ -221,12 +253,19 @@
 ")
 
   (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
-
   (ffirst xs)
 
-  (require '[conllu-rest.server.xtdb :refer [xtdb-node]])
+  (conllu-rest.xtdb.creation/create-document node xs)
+  (def doc-id (ffirst (xt/q (xt/db node) {:find '[?d] :where [['?d :document/id]]})))
+  doc-id
 
-  (pull xtdb-node {:xt/id #uuid "2dc17a1c-6038-4ce5-8af1-7c2b0252a01b"
+  (pull node {:document/id doc-id :xt/id doc-id})
+
+  (spit "/tmp/bar" (conllu-rest.xtdb.serialization/serialize-document node doc-id))
+
+
+  (require '[conllu-rest.server.xtdb :refer [xtdb-node]])
+  (pull xtdb-node {:xt/id       #uuid "2dc17a1c-6038-4ce5-8af1-7c2b0252a01b"
                    :sentence/id #uuid "2dc17a1c-6038-4ce5-8af1-7c2b0252a01b"})
 
   (cxe/entity xtdb-node #uuid "08231967-9165-48ff-925b-4c2e3c72ed34")
@@ -240,6 +279,8 @@
                                        '[?f :form/value ?fv]]})
 
   (split-sentence node #uuid"dcc68d93-7e09-47e3-8e96-98eb8c1d25b1")
+
+  (conllu-rest.xtdb.serialization/serialize-document node)
 
   xs
   (:metadata (first xs)))
