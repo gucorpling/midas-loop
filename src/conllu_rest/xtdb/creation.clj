@@ -148,7 +148,7 @@
   [{:keys [tokens metadata]}]
   (let [sentence-id (UUID/randomUUID)
         ;; supertokens need to have the ID of subsequent tokens ready--generate IDs here to facilitate this
-        token-id-map (into {} (map (fn [{:keys [id]}] [id (UUID/randomUUID)]) tokens))
+        token-id-map (into {0 :root} (map (fn [{:keys [id]}] [id (UUID/randomUUID)]) tokens))
         conllu-metadata-txs (reduce into (map #(build-conllu-metadata %) metadata))
         conllu-metadata-ids (mapv (comp :conllu-metadata/id second) conllu-metadata-txs)
         token-txs (reduce into (map #(build-token token-id-map %) tokens))
@@ -226,7 +226,9 @@
 3	Cartagena	Cartagena	PROPN	NNP	Number=Sing	1	flat	1:flat	Entity=person-1)
 ")
 
-  (def xs (conllu-rest.conllu/parse-conllu-string data))
+  (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
+
+  xs
 
   (ffirst xs)
 

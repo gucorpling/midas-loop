@@ -25,7 +25,6 @@
 (defn serialize-token
   ([node id-map token-id] (serialize-token node id-map (StringBuilder.) token-id))
   ([node id-map sb token-id]
-   (println id-map)
    (let [token (cxe/entity node token-id)]
      ;; ID
      (.append sb (id-map (:token/id token)))
@@ -71,9 +70,8 @@
 
 (defn resolve-ids [node token-ids]
   (let [tokens (map #(cxe/entity node %) token-ids)]
-    (println tokens)
     (loop [index 1
-           id-map {}
+           id-map {:root "0"}
            {:token/keys [token-type id subtokens] :as token} (first tokens)
            tail (rest tokens)
            consec-empty 0]
