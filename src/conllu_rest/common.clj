@@ -8,7 +8,7 @@
 
 (defn error-response [error-details]
   {:status (:status error-details)
-   :body   error-details})
+   :body   (:body error-details)})
 
 (defn nyi-response [request]
   {:status 501
