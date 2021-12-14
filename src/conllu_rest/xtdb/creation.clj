@@ -42,31 +42,35 @@
                  {:conllu-metadata/key   key
                   :conllu-metadata/value value}))]))
 
-(defn build-associative [name [key value]]
-  (let [associative-id (UUID/randomUUID)]
-    [(cxe/put* (cxe/create-record
-                 name
-                 associative-id
-                 {(keyword name "key")   key
-                  (keyword name "value") value}))]))
-
-(defn build-atomic [name value]
-  (let [atomic-id (UUID/randomUUID)]
-    [(cxe/put* (cxe/create-record
-                 name
-                 atomic-id
-                 {(keyword name "value") value}))]))
-
-(defn build-field
+(defn build-associative
   ([token name]
-   (build-field token name identity))
+   (build-associative token name identity))
+  ([token name key-xform]
+   (let [name-kwd (keyword name)
+         txs (reduce into (map (fn [[key value]]
+                                 (let [associative-id (UUID/randomUUID)]
+                                   [(cxe/put* (cxe/create-record
+                                                name
+                                                associative-id
+                                                {(keyword name "key")   (key-xform key)
+                                                 (keyword name "value") value}))]))
+                               (name-kwd token)))
+         ids (mapv (comp (keyword name "id") second) txs)]
+     [txs ids])
+
+   ))
+
+(defn build-atomic
+  ([token name]
+   (build-atomic token name identity))
   ([token name field-xform]
    (let [name-kwd (keyword name)
          field-value (field-xform (name-kwd token))
-         assoc-field? (associative-fields name-kwd)
-         txs (if assoc-field?
-               (reduce into (map #(build-associative name %) field-value))
-               (build-atomic name field-value))
+         txs (let [atomic-id (UUID/randomUUID)]
+               [(cxe/put* (cxe/create-record
+                            name
+                            atomic-id
+                            {(keyword name "value") field-value}))])
          ids (mapv (comp (keyword name "id") second) txs)]
      [txs ids])))
 
@@ -97,15 +101,15 @@
         new-id (get token-id-map orig-id)
         token (-> token (assoc :token-type token-type) (dissoc :id))
         ;; todo: maybe refactor to rely on `associative-fields`
-        [form-txs [form-id]] (build-field token "form")
-        [lemma-txs [lemma-id]] (build-field token "lemma")
-        [upos-txs [upos-id]] (build-field token "upos")
-        [xpos-txs [xpos-id]] (build-field token "xpos")
-        [feats-txs feats-ids] (build-field token "feats")
-        [head-txs [head-id]] (build-field token "head" #(token-id-map %))
-        [deprel-txs [deprel-id]] (build-field token "deprel")
-        [deps-txs deps-ids] (build-field token "deps")
-        [misc-txs misc-ids] (build-field token "misc")
+        [form-txs [form-id]] (build-atomic token "form")
+        [lemma-txs [lemma-id]] (build-atomic token "lemma")
+        [upos-txs [upos-id]] (build-atomic token "upos")
+        [xpos-txs [xpos-id]] (build-atomic token "xpos")
+        [feats-txs feats-ids] (build-associative token "feats")
+        [head-txs [head-id]] (build-atomic token "head" #(token-id-map %))
+        [deprel-txs [deprel-id]] (build-atomic token "deprel")
+        [deps-txs deps-ids] (build-associative token "deps" #(token-id-map %))
+        [misc-txs misc-ids] (build-associative token "misc")
         token (cxe/create-record
                 "token"
                 new-id
