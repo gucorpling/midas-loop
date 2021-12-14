@@ -29,11 +29,11 @@
         (wrap-webjars (constantly nil)))
       (ring/create-default-handler
         {:not-found
-         (constantly (error-response {:status 404, :title "404 - Page not found"}))
+         (constantly (error-response {:status 404, :body "404 - Page not found"}))
          :method-not-allowed
-         (constantly (error-response {:status 405, :title "405 - Not allowed"}))
+         (constantly (error-response {:status 405, :body "405 - Not allowed"}))
          :not-acceptable
-         (constantly (error-response {:status 406, :title "406 - Not acceptable"}))}))))
+         (constantly (error-response {:status 406, :body "406 - Not acceptable"}))}))))
 
 (defn app []
   (middleware/wrap-base #'app-routes))
