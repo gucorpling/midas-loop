@@ -1,10 +1,10 @@
 (ns conllu-rest.common
   (:import (java.util UUID)))
 
-(defn uuid-string? [s]
-  (try (do (UUID/fromString s) true)
+(defn parse-uuid [s]
+  (try (UUID/fromString s)
        (catch IllegalArgumentException _
-         false)))
+         nil)))
 
 (defn error-response [error-details]
   {:status (:status error-details)

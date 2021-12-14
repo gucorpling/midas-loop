@@ -6,7 +6,7 @@
 
 (defn conllu-metadata-routes []
   ["/conllu-metadata"
-   ["/:id"
+   ["/id/:id"
     {:get {:summary    "Produce JSON representation of a conllu metadata line"
            :parameters {:path {:id uuid?}}
            :handler    cc/get-handler}}]])

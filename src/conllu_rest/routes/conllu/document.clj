@@ -6,7 +6,7 @@
 
 (defn document-routes []
   ["/document"
-   ["/:id"
+   ["/id/:id"
     {:get {:summary    "Produce JSON representation of a document"
            :parameters {:path {:id uuid?}}
            :handler    cc/get-handler}}]])
