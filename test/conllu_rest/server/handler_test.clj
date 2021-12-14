@@ -3,12 +3,12 @@
     [clojure.test :refer :all]
     [ring.mock.request :refer :all]
     [conllu-rest.server.handler :refer :all]
-    [conllu-rest.server.middleware.formats :as formats]
+    [conllu-rest.routes.services :refer [muuntaja-instance]]
     [muuntaja.core :as m]
     [mount.core :as mount]))
 
 (defn parse-json [body]
-  (m/decode formats/instance "application/json" body))
+  (m/decode muuntaja-instance "application/json" body))
 
 (use-fixtures
   :once
@@ -19,14 +19,14 @@
 
 (deftest test-app
   (testing "main route"
-    (let [response ((app) (request :get "/"))]
+    (let [response ((app) (request :get "/api/swagger.json"))]
       (is (= 200 (:status response)))))
 
   (testing "not-found route"
     (let [response ((app) (request :get "/invalid"))]
       (is (= 404 (:status response)))))
-  (testing "services"
 
+  #_(testing "services"
     (testing "success"
       (let [response ((app) (-> (request :post "/api/math/plus")
                                 (json-body {:x 10, :y 6})))]
