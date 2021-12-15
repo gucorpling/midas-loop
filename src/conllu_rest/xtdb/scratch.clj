@@ -57,3 +57,10 @@
       ))
   )
 
+(comment
+  ;; tokens
+  (require '[conllu-rest.server.tokens :refer [xtdb-token-node create-token]])
+  (create-token xtdb-token-node {:name "Luke" :email "lukegessler@gmail.com"})
+
+  )
+
