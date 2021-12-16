@@ -30,11 +30,11 @@
 3	Cartagena	Cartagena	PROPN	NNP	Number=Sing	1	flat	1:flat	Entity=person-1)
 ")
 
-(def node (xtdb.api/start-node {}))
-
-(def xs (conllu-rest.conllu-parser/parse-conllu-string data))
-
 (comment
+  (def node (xtdb.api/start-node {}))
+
+  (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
+
   (require '[conllu-rest.xtdb :refer [xtdb-node]])
 
   (cxc/create-document node xs)
