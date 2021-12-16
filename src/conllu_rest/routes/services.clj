@@ -7,20 +7,11 @@
             [reitit.ring.middleware.multipart :as multipart]
             [reitit.ring.middleware.parameters :as parameters]
             [conllu-rest.routes.conllu :refer [conllu-routes]]
+            [conllu-rest.server.middleware :refer [muuntaja-instance]]
             [ring.util.http-response :refer :all]
             [clojure.java.io :as io]
             [muuntaja.core :as m]
             [luminus-transit.time :as time]))
-
-(def muuntaja-instance
-  (m/create
-    (-> m/default-options
-        (update-in
-          [:formats "application/transit+json" :decoder-opts]
-          (partial merge time/time-deserialization-handlers))
-        (update-in
-          [:formats "application/transit+json" :encoder-opts]
-          (partial merge time/time-serialization-handlers)))))
 
 (defn service-routes []
   ["/api"

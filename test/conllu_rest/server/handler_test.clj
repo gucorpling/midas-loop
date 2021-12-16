@@ -3,7 +3,7 @@
     [clojure.test :refer :all]
     [ring.mock.request :refer :all]
     [conllu-rest.server.handler :refer :all]
-    [conllu-rest.routes.services :refer [muuntaja-instance]]
+    [conllu-rest.server.middleware :refer [muuntaja-instance]]
     [muuntaja.core :as m]
     [mount.core :as mount]))
 

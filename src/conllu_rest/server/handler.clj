@@ -1,6 +1,7 @@
 (ns conllu-rest.server.handler
   (:require [conllu-rest.server.middleware :as middleware]
             [conllu-rest.common :refer [error-response]]
+            [conllu-rest.routes.home :refer [home-routes]]
             [conllu-rest.routes.services :refer [service-routes]]
             [reitit.swagger-ui :as swagger-ui]
             [reitit.ring :as ring]
@@ -17,7 +18,8 @@
   :start
   (ring/ring-handler
     (ring/router
-      [(service-routes)])
+      [(service-routes)
+       (home-routes)])
     (ring/routes
       (swagger-ui/create-swagger-ui-handler
         {:path   "/swagger-ui"

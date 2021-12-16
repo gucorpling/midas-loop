@@ -29,6 +29,8 @@
                  [ring/ring-core "1.9.4"]
                  [ring/ring-defaults "0.3.3"]
                  [buddy/buddy-auth "3.0.1"]
+                 [selmer "1.12.44"]
+                 [jumblerg/ring-cors "2.0.0"]
 
                  [com.xtdb/xtdb-core "1.19.0-beta1"]
                  [com.xtdb/xtdb-lmdb "1.19.0-beta1"]
