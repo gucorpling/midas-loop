@@ -47,7 +47,7 @@
 (defn list-tokens [args]
   (mount/start-with-args args)
   (log/info "Existing tokens:\n")
-  (let [records (cxe/find-entities tok/xtdb-token-node {:secret '_})]
+  (let [records (tok/list-tokens tok/xtdb-token-node)]
     (binding [clojure.pprint/*print-miser-width* 80
               clojure.pprint/*print-right-margin* 100
               clojure.pprint/*print-pprint-dispatch* clojure.pprint/code-dispatch]

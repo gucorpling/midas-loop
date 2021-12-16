@@ -7,7 +7,7 @@
   (:import (java.util UUID)))
 
 
-(defn- remove-namespaces [m]
+(defn remove-namespaces [m]
   (postwalk
     (fn [v]
       (if (keyword? v)

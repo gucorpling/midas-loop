@@ -3,7 +3,8 @@
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.xtdb.serialization :as cxs]
             [conllu-rest.xtdb.creation :as cxc]
-            [conllu-rest.xtdb.queries :as cxq]))
+            [conllu-rest.xtdb.queries :as cxq]
+            [conllu-rest.server.tokens :as tok]))
 
 
 (def data "
@@ -59,8 +60,11 @@
 
 (comment
   ;; tokens
-  (require '[conllu-rest.server.tokens :refer [xtdb-token-node create-token]])
+  (require '[conllu-rest.server.tokens :as tok :refer [xtdb-token-node create-token]])
   (create-token xtdb-token-node {:name "Luke" :email "lukegessler@gmail.com"})
+
+  (tok/list-tokens tok/xtdb-token-node)
+
 
   )
 

@@ -54,6 +54,9 @@
 (defn read-token [node id]
   (cxe/entity node id))
 
+(defn list-tokens [node]
+  (cxe/find-entities node {:secret '_}))
+
 (defstate buddy-backend
   :start (let [auth-fn (fn [{:keys [token-node]} token]
                          (read-token token-node (keyword token)))]

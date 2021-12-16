@@ -28,8 +28,7 @@
 (defn include-database
   [handler k xtdb-node]
   (fn [request]
-    (-> (handler (assoc request k xtdb-node))
-        (header "Access-Control-Allow-Origin" "*"))))
+    (handler (assoc request k xtdb-node))))
 
 (defn wrap-internal-error [handler]
   (fn [req]
