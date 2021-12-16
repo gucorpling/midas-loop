@@ -44,7 +44,7 @@
 (defn wrap-base [handler]
   (let [wrap-cors* (fn [handler pats]
                      (apply wrap-cors handler pats))
-        cors-patterns (conj (or (:cors-patterns env) #{}) #".*localhost.*")]
+        cors-patterns (concat [#".*localhost.*"] (map re-pattern (:cors-patterns env)))]
     (-> ((:middleware defaults) handler)
         (wrap-cors* cors-patterns)
         (include-database :node xtdb-node)
