@@ -4,13 +4,15 @@
             [conllu-rest.xtdb.creation :refer [ingest-conllu-files]]
             [conllu-rest.server.http]
             [conllu-rest.server.repl]
+            [conllu-rest.server.tokens :as tok]
             [clojure.tools.logging :as log]
             [mount.core :as mount]
             [cli-matic.core :refer [run-cmd*]]
             [cli-matic.utils-v2 :as U2]
             [cli-matic.utils :as U]
             [cli-matic.help-gen :as H]
-            [cli-matic.platform :as P])
+            [cli-matic.platform :as P]
+            [conllu-rest.xtdb.easy :as cxe])
   (:gen-class))
 
 ;; log uncaught exceptions in threads
@@ -36,13 +38,40 @@
     (println (str "\t- " name)))
   (println "\nEnd document manifest.\n"))
 
+(defn add-token [{:keys [name email] :as args}]
+  (mount/start-with-args args)
+  (log/info (str "Attemping to add a token for user:\n\n\tName: " name "\n\tEmail: " email "\n"))
+  (let [{:keys [secret]} (tok/create-token tok/xtdb-token-node args)]
+    (log/info (str "Successfully created token:\n\n\t" secret "\n\nKeep this token SECRET."))))
+
+(defn list-tokens [args]
+  (mount/start-with-args args)
+  (log/info "Existing tokens:\n")
+  (let [records (cxe/find-entities tok/xtdb-token-node {:secret '_})]
+    (binding [clojure.pprint/*print-miser-width* 80
+              clojure.pprint/*print-right-margin* 100
+              clojure.pprint/*print-pprint-dispatch* clojure.pprint/code-dispatch]
+      (doseq [record records]
+        (println (with-out-str (clojure.pprint/pprint record))))))
+  (println))
+
+(defn revoke-token [{:keys [secret] :as args}]
+  (mount/start-with-args args)
+  (println)
+  (log/info (str "Attempting to revoke token " secret))
+  (if (some? (tok/read-token tok/xtdb-token-node (keyword secret)))
+    (do
+      (tok/delete-token tok/xtdb-token-node (keyword secret))
+      (log/info "Deletion successful."))
+    (log/warn (str "Token does note exist: " secret)))
+  (println))
+
 (def cli-config
   {:app         {:command     "conllu-rest"
                  :description "https://github.com/lgessler/conllu-rest"
                  :version     "0.0.1"}
    :global-opts []
-   :commands    [
-                 ;; main method--run the HTTP server
+   :commands    [;; main method--run the HTTP server
                  {:command     "run"
                   :short       "r"
                   :description ["Start the web app and begin listening for requests."]
@@ -62,7 +91,40 @@
                                  :type     :string
                                  :multiple true}]
                   :runs        ingest
-                  :on-shutdown stop-app}]})
+                  :on-shutdown stop-app}
+
+                 {:command     "token"
+                  :short       "t"
+                  :description ["Token-related helpers."]
+                  :opts        []
+                  :subcommands [{:command     "add"
+                                 :short       "a"
+                                 :description "Mint a new token for a user"
+                                 :opts        [{:option "name"
+                                                :short  0
+                                                :as     "User's name (human-friendly)"
+                                                :type   :string}
+                                               {:option "email"
+                                                :short  1
+                                                :as     "User's email"
+                                                :type   :string}]
+                                 :runs        add-token
+                                 :on-shutdown stop-app}
+                                {:command     "list"
+                                 :short       "l"
+                                 :description "List all valid tokens"
+                                 :opts        []
+                                 :runs        list-tokens
+                                 :on-shutdown stop-app}
+                                {:command     "revoke"
+                                 :short       "r"
+                                 :description "Remove a valid token"
+                                 :opts        [{:option "secret"
+                                                :short  0
+                                                :as     "The token to be revoked"
+                                                :type   :string}]
+                                 :runs        revoke-token
+                                 :on-shutdown stop-app}]}]})
 
 
 (defn run-cmd
