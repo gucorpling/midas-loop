@@ -1,4 +1,6 @@
 (ns conllu-rest.xtdb.queries
+  "Reads and writes. Note that all of our writes, for now, use the (locking ...) macro from clojure.core
+  as a cheap way to avoid concurrent write issues."
   (:require [clojure.tools.logging :as log]
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.common :as common]
@@ -123,7 +125,7 @@
               (swap! txs conj (cxe/delete* deps-id))
               (swap! new-deps #(filterv (fn [e] (not= (:deps/id e) deps-id)) %))))
           (when-not (= @new-deps orig-deps)
-            (swap! txs conj (cxe/put* (assoc (cxe/entity node (:token/id token)) :token/deps @new-deps)))))))
+            (swap! txs conj (cxe/put* (assoc (cxe/entity node (:token/id token)) :token/deps (mapv :deps/id @new-deps))))))))
     @txs))
 
 (defn split-sentence
@@ -135,43 +137,44 @@
   - Document doesn't exist for token
   - Token is already the beginning of a sentence"
   [node token-id]
-  (let [sentence-id (sentence-from-token node token-id)
-        {:sentence/keys [tokens] :as sentence} (cxe/entity node sentence-id)
-        document-id (parent node :document/sentences sentence-id)]
-    (cond
-      (nil? (cxe/entity node token-id))
-      (write-error (str "Token doesn't exist: " token-id))
+  (locking node
+    (let [sentence-id (sentence-from-token node token-id)
+          {:sentence/keys [tokens] :as sentence} (cxe/entity node sentence-id)
+          document-id (parent node :document/sentences sentence-id)]
+      (cond
+        (nil? (cxe/entity node token-id))
+        (write-error (str "Token doesn't exist: " token-id))
 
-      (nil? sentence-id)
-      (write-error (str "Sentence not found for token: " token-id))
+        (nil? sentence-id)
+        (write-error (str "Sentence not found for token: " token-id))
 
-      (nil? document-id)
-      (write-error (str "Document not found for token: " token-id))
+        (nil? document-id)
+        (write-error (str "Document not found for token: " token-id))
 
-      (= (first tokens) token-id)
-      (write-error (str "Token " token-id " is already at the beginning of a sentence."))
+        (= (first tokens) token-id)
+        (write-error (str "Token " token-id " is already at the beginning of a sentence."))
 
-      :else
-      (let [left-tokens (remove-after tokens token-id)
-            right-tokens (take-from tokens token-id)
-            updated-sentence (-> sentence
-                                 (assoc :sentence/tokens left-tokens))
-            new-sentence-id (UUID/randomUUID)
-            new-sentence-record (-> sentence
-                                    (assoc :sentence/tokens right-tokens)
-                                    (assoc :sentence/id new-sentence-id)
-                                    (assoc :xt/id new-sentence-id)
-                                    ;; TODO: we want to be more careful than this
-                                    (dissoc :sentence/conllu-metadata))
-            updated-document (-> (cxe/entity node document-id)
-                                 (update :document/sentences insert-after sentence-id new-sentence-id))
-            txs [(cxe/put* updated-sentence)
-                 (cxe/put* new-sentence-record)
-                 (cxe/put* updated-document)]
-            txs (concat txs (remove-invalid-deps node left-tokens) (remove-invalid-deps node right-tokens))]
-        (if (cxe/submit-tx-sync node txs)
-          (assoc (write-ok) :new-sentence-id new-sentence-id)
-          (write-error "Internal XTDB error"))))))
+        :else
+        (let [left-tokens (remove-after tokens token-id)
+              right-tokens (take-from tokens token-id)
+              updated-sentence (-> sentence
+                                   (assoc :sentence/tokens left-tokens))
+              new-sentence-id (UUID/randomUUID)
+              new-sentence-record (-> sentence
+                                      (assoc :sentence/tokens right-tokens)
+                                      (assoc :sentence/id new-sentence-id)
+                                      (assoc :xt/id new-sentence-id)
+                                      ;; TODO: we want to be more careful than this
+                                      (dissoc :sentence/conllu-metadata))
+              updated-document (-> (cxe/entity node document-id)
+                                   (update :document/sentences insert-after sentence-id new-sentence-id))
+              txs [(cxe/put* updated-sentence)
+                   (cxe/put* new-sentence-record)
+                   (cxe/put* updated-document)]
+              txs (concat txs (remove-invalid-deps node left-tokens) (remove-invalid-deps node right-tokens))]
+          (if (cxe/submit-tx-sync node txs)
+            (assoc (write-ok) :new-sentence-id new-sentence-id)
+            (write-error "Internal XTDB error")))))))
 
 (defn merge-sentence-right
   "Merge a given sentence, removing the record of the sentence to the right and merging its tokens with the sentence
@@ -180,43 +183,45 @@
   - Document doesn't exist for sentence
   - No sentence in the document exists to the right"
   [node sentence-id]
-  (let [document-id (parent node :document/sentences sentence-id)
-        {:document/keys [sentences] :as document} (cxe/entity node document-id)]
-    (cond
-      (nil? (cxe/entity node sentence-id))
-      (write-error (str "Sentence not found: " sentence-id))
+  (locking node
+    (let [document-id (parent node :document/sentences sentence-id)
+          {:document/keys [sentences] :as document} (cxe/entity node document-id)]
+      (cond
+        (nil? (cxe/entity node sentence-id))
+        (write-error (str "Sentence not found: " sentence-id))
 
-      (nil? document)
-      (write-error (str "Document not found for sentence: " sentence-id))
+        (nil? document)
+        (write-error (str "Document not found for sentence: " sentence-id))
 
-      (= sentence-id (last sentences))
-      (write-error (str "No sentence to merge that follows sentence: " sentence-id))
+        (= sentence-id (last sentences))
+        (write-error (str "No sentence to merge that follows sentence: " sentence-id))
 
-      :else
-      (let [other-sentence-id (get sentences (inc (find-index sentences sentence-id)))
-            other-sentence (cxe/entity node other-sentence-id)
-            new-sentence-list (vec (remove #(= % other-sentence-id) sentences))
-            updated-document-record (-> document
-                                        (assoc :document/sentences new-sentence-list))
-            updated-sentence-record (-> (cxe/entity node sentence-id)
-                                        (update :sentence/tokens into (:sentence/tokens other-sentence)))
-            ;; TODO: keep any meta from the other sentence?
-            txs [(cxe/put* updated-document-record)
-                 (cxe/put* updated-sentence-record)
-                 (cxe/delete* other-sentence-id)]]
+        :else
+        (let [other-sentence-id (get sentences (inc (find-index sentences sentence-id)))
+              other-sentence (cxe/entity node other-sentence-id)
+              new-sentence-list (vec (remove #(= % other-sentence-id) sentences))
+              updated-document-record (-> document
+                                          (assoc :document/sentences new-sentence-list))
+              updated-sentence-record (-> (cxe/entity node sentence-id)
+                                          (update :sentence/tokens into (:sentence/tokens other-sentence)))
+              ;; TODO: keep any meta from the other sentence?
+              txs [(cxe/put* updated-document-record)
+                   (cxe/put* updated-sentence-record)
+                   (cxe/delete* other-sentence-id)]]
 
-        (if (cxe/submit-tx-sync node txs)
-          (write-ok)
-          (write-error "Internal XTDB error"))))))
+          (if (cxe/submit-tx-sync node txs)
+            (write-ok)
+            (write-error "Internal XTDB error")))))))
 
 (defn merge-sentence-left
   [node sentence-id]
-  (let [document-id (parent node :document/sentences sentence-id)
-        {:document/keys [sentences]} (cxe/entity node document-id)]
-    (cond
-      (= sentence-id (first sentences))
-      (write-error (str "No sentence to merge that precedes: " sentence-id))
+  (locking node
+    (let [document-id (parent node :document/sentences sentence-id)
+          {:document/keys [sentences]} (cxe/entity node document-id)]
+      (cond
+        (= sentence-id (first sentences))
+        (write-error (str "No sentence to merge that precedes: " sentence-id))
 
-      :else
-      (let [other-sentence-id (get sentences (dec (find-index sentences sentence-id)))]
-        (merge-sentence-right node other-sentence-id)))))
+        :else
+        (let [other-sentence-id (get sentences (dec (find-index sentences sentence-id)))]
+          (merge-sentence-right node other-sentence-id))))))
