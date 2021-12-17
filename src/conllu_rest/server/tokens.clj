@@ -39,13 +39,15 @@
      (.nextBytes secure-random buffer)
      (.encodeToString b64-encoder buffer))))
 
-(defn create-token [node {:keys [name email]}]
-  (let [secret-string (str "secret=" (generate-token 48))
+(defn create-token [node {:keys [name email quality]}]
+  (let [secret-string (str (clojure.core/name quality) ";secret=" (generate-token 32))
         record {:xt/id      (keyword secret-string)
                 :secret     secret-string
                 :user-name  name
-                :user-email email}]
-    (when (cxe/put node record)
+                :user-email email
+                :quality    quality}]
+    (when (and (#{:silver :gold} quality)
+               (cxe/put node record))
       record)))
 
 (defn delete-token [node id]

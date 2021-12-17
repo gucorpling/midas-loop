@@ -107,7 +107,12 @@
                                                {:option "email"
                                                 :short  1
                                                 :as     "User's email"
-                                                :type   :string}]
+                                                :type   :string}
+                                               {:option "quality"
+                                                :short  2
+                                                :as     (str "Quality of annotaions produced by the token user. "
+                                                             "Use silver for NLP tools.")
+                                                :type   #{:gold :silver}}]
                                  :runs        add-token
                                  :on-shutdown stop-app}
                                 {:command     "list"
