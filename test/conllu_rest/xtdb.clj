@@ -92,7 +92,17 @@
 
     (testing "Splitting a sentence is OK if the token is not at the beginning of a sentence"
       (= :ok (:status (cxq/split-sentence node freq-token-id)))
-      (= 3 (count (cxe/find-entities node {:sentence/id '_}))))
+      (= 3 (count (cxe/find-entities node {:sentence/id '_})))
+      (= 6 (count (:sentence/tokens (xt/pull (xt/db node) [{:sentence/tokens [:token/id]}] first-sent-id))))
+      (= 12 (count (:sentence/tokens (xt/pull (xt/db node) [{:sentence/tokens [:token/id]}] last-sent-id))))
+      (= 1 (count (:sentence/tokens
+                    (xt/pull (xt/db node) [{:sentence/tokens [:token/id]}]
+                             (ffirst (xt/q (xt/db node)
+                                           {:find  '[?s]
+                                            :where ['[?s :sentence/id]
+                                                    '(not [?s :sentence/id ~last-sent-id])
+                                                    '(not [?s :sentence/id ~first-sent-id])]}))))))
+      )
 
     (testing "Merging a sentence fails if it's the last sentence in a document"
       (= :error (:status (cxq/merge-sentence-right node last-sent-id))))
