@@ -49,10 +49,9 @@
         (include-database :node xtdb-node)
         (include-database :token-node xtdb-token-node)
         wrap-flash
-        (wrap-session {})
         (wrap-defaults
           (-> site-defaults
-              ;;(assoc-in [:security :anti-forgery] false)
+              (assoc-in [:security :anti-forgery] false)
               (dissoc :session)))
         wrap-internal-error)))
 

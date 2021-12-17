@@ -23,7 +23,7 @@
 (defn conllu-routes []
   ["/conllu"
    {:swagger    {:tags ["conllu"]}
-    :middleware [#_wrap-token-auth]}
+    :middleware [wrap-token-auth]}
 
    (document-routes)
    (sentence-routes)

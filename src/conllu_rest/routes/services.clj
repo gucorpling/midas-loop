@@ -11,7 +11,8 @@
             [ring.util.http-response :refer :all]
             [clojure.java.io :as io]
             [muuntaja.core :as m]
-            [luminus-transit.time :as time]))
+            [luminus-transit.time :as time]
+            [conllu-rest.server.tokens :as tok]))
 
 (defn service-routes []
   ["/api"
@@ -34,6 +35,14 @@
                  coercion/coerce-request-middleware
                  ;; multipart
                  multipart/multipart-middleware]}
+
+   ["/check-token"
+    {:post {:summary    "200 if a token is valid, 400 if not"
+            :parameters {:body {:token string?}}
+            :handler    (fn [{{token :token} :body-params token-node :token-node :as req}]
+                          (if (nil? (tok/read-token token-node (keyword token)))
+                            (bad-request "Invalid token")
+                            (ok "Token valid")))}}]
 
    (conllu-routes)
 
