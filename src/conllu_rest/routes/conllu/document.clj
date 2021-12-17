@@ -21,14 +21,17 @@
                                      [?d :document/name ?dn]]
                          :order-by '[[?dn :desc]]
                          :limit    limit
-                         :offset   offset}]
-              (ok (mapv (fn [[id name]] {:id id :name name})
-                        (xt/q (xt/db node) query))))))))
+                         :offset   offset}
+                  count-query {:find  '[(count ?d)]
+                               :where '[[?d :document/id]]}]
+              (ok {:docs  (mapv (fn [[id name]] {:id id :name name})
+                                (xt/q (xt/db node) query))
+                   :total (ffirst (xt/q (xt/db node) count-query))}))))))
 
 (defn document-routes []
   ["/document"
    [""
-    {:get {:summary    "List all documents"
+    {:get {:summary    "Fetch a page's worth of docs (at \"docs\") and a total count of docs (at \"total\")"
            :parameters {:query {:offset int?
                                 :limit  int?}}
            :handler    document-query}}]
