@@ -14,10 +14,19 @@
           (bad-request msg)))
       (bad-request "Token ID must be a valid java.util.UUID"))))
 
-(defn merge-sentence [{:keys [body-params node] :as request}]
+(defn merge-sentence-right [{:keys [body-params node] :as request}]
   (let [sentence-id (:sentence-id body-params)]
     (if-let [sentence-id (common/parse-uuid sentence-id)]
       (let [{:keys [status msg]} (cxq/merge-sentence-right node sentence-id)]
+        (if (= status :ok)
+          (ok)
+          (bad-request msg)))
+      (bad-request "Token ID must be a valid java.util.UUID"))))
+
+(defn merge-sentence-left [{:keys [body-params node] :as request}]
+  (let [sentence-id (:sentence-id body-params)]
+    (if-let [sentence-id (common/parse-uuid sentence-id)]
+      (let [{:keys [status msg]} (cxq/merge-sentence-left node sentence-id)]
         (if (= status :ok)
           (ok)
           (bad-request msg)))
@@ -45,7 +54,11 @@
                               " if the sentence or its document do not exist, or if the sentence"
                               " is already at the end of its document.")
             :parameters  {:body {:sentence-id uuid?}}
-            :handler     merge-sentence}}]])
+            :handler     merge-sentence-right}}]
+   ["/merge-left"
+    {:post {:summary     "Like merge-right, but to the left."
+            :parameters  {:body {:sentence-id uuid?}}
+            :handler     merge-sentence-left}}]])
 
 
 

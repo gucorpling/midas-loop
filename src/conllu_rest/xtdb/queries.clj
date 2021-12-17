@@ -208,3 +208,15 @@
         (if (cxe/submit-tx-sync node txs)
           (write-ok)
           (write-error "Internal XTDB error"))))))
+
+(defn merge-sentence-left
+  [node sentence-id]
+  (let [document-id (parent node :document/sentences sentence-id)
+        {:document/keys [sentences]} (cxe/entity node document-id)]
+    (cond
+      (= sentence-id (first sentences))
+      (write-error (str "No sentence to merge that precedes: " sentence-id))
+
+      :else
+      (let [other-sentence-id (get sentences (dec (find-index sentences sentence-id)))]
+        (merge-sentence-right node other-sentence-id)))))
