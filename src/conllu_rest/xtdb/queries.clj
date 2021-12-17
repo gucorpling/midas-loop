@@ -195,7 +195,7 @@
       :else
       (let [other-sentence-id (get sentences (inc (find-index sentences sentence-id)))
             other-sentence (cxe/entity node other-sentence-id)
-            new-sentence-list (remove #(= % other-sentence-id) sentences)
+            new-sentence-list (vec (remove #(= % other-sentence-id) sentences))
             updated-document-record (-> document
                                         (assoc :document/sentences new-sentence-list))
             updated-sentence-record (-> (cxe/entity node sentence-id)
