@@ -1,10 +1,5 @@
 (ns conllu-rest.core
-  (:require [conllu-rest.server.config :refer [env]]
-            [conllu-rest.server.xtdb :refer [xtdb-node]]
-            [conllu-rest.xtdb.creation :refer [ingest-conllu-files]]
-            [conllu-rest.server.http]
-            [conllu-rest.server.repl]
-            [conllu-rest.server.tokens :as tok]
+  (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [mount.core :as mount]
             [cli-matic.core :refer [run-cmd*]]
@@ -12,6 +7,14 @@
             [cli-matic.utils :as U]
             [cli-matic.help-gen :as H]
             [cli-matic.platform :as P]
+            [xtdb.api :as xt]
+            [conllu-rest.server.config :refer [env]]
+            [conllu-rest.server.xtdb :refer [xtdb-node]]
+            [conllu-rest.xtdb.creation :refer [ingest-conllu-files]]
+            [conllu-rest.xtdb.serialization :refer [serialize-document]]
+            [conllu-rest.server.http]
+            [conllu-rest.server.repl]
+            [conllu-rest.server.tokens :as tok]
             [conllu-rest.xtdb.easy :as cxe])
   (:gen-class))
 
@@ -37,6 +40,17 @@
   (doseq [name (:filepaths args)]
     (println (str "\t- " name)))
   (println "\nEnd document manifest.\n"))
+
+(defn export [args]
+  (mount/start-with-args args)
+  (log/info "Attempting export to " (:outpath args))
+  (doseq [{:document/keys [id name]} (cxe/find-entities xtdb-node [[:document/id '_]])]
+    (let [doc-str (serialize-document xtdb-node id)
+          filename (str (:outpath args) "/" name ".conllu")]
+      (io/make-parents filename)
+      (spit filename doc-str)
+      (println "Wrote " filename)))
+  (println "Done with export."))
 
 (defn add-token [{:keys [name email] :as args}]
   (mount/start-with-args args)
@@ -93,9 +107,24 @@
                   :runs        ingest
                   :on-shutdown stop-app}
 
+                 ;; export
+                 {:command     "export"
+                  :short       "e"
+                  :description ["Export all documents in the database as CoNLL-U files."
+                                ""
+                                "NOTE: you should only run this command while your server is shut down."]
+                  :opts        [{:option   "outpath"
+                                 :short    0
+                                 :as       "Directory where the CoNLL-U files should be written"
+                                 :type     :string}]
+                  :runs        export
+                  :on-shutdown stop-app}
+
                  {:command     "token"
                   :short       "t"
-                  :description ["Token-related helpers."]
+                  :description ["Token-related helpers."
+                                ""
+                                "NOTE: you should only run this command while your server is shut down."]
                   :opts        []
                   :subcommands [{:command     "add"
                                  :short       "a"
