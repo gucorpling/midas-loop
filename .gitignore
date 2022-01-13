@@ -13,6 +13,7 @@ profiles.clj
 .nrepl-port
 .idea/
 *.iml
+.vscode/
 
 /node_modules
 /log
