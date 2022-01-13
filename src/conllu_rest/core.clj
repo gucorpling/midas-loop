@@ -31,11 +31,11 @@
     (log/info component "stopped"))
   (shutdown-agents))
 
-(defn ingest [args]
+(defn import [args]
   (mount/start-with-args args)
   (log/info (:filepaths args))
   (ingest-conllu-files xtdb-node (:filepaths args))
-  (log/info (str "Successfully ingested " (count (:filepaths args)) " documents:"))
+  (log/info (str "Successfully imported " (count (:filepaths args)) " documents:"))
   (println "\nBegin document manifest:\n")
   (doseq [name (:filepaths args)]
     (println (str "\t- " name)))
@@ -94,7 +94,7 @@
                   :on-shutdown stop-app}
 
                  ;; read in conllu files
-                 {:command     "ingest"
+                 {:command     "import"
                   :short       "i"
                   :description ["Read and ingest CoNLL-U files."
                                 ""
@@ -104,7 +104,7 @@
                                  :as       "paths to CoNLL-U files to ingest"
                                  :type     :string
                                  :multiple true}]
-                  :runs        ingest
+                  :runs        import
                   :on-shutdown stop-app}
 
                  ;; export
