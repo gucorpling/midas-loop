@@ -5,21 +5,21 @@
             [conllu-rest.xtdb.queries.sentence :as cxqs]
             [conllu-rest.xtdb.easy :as cxe]))
 
+(defn delete-sentence [{:keys [path-params node] :as request}]
+  (let [sentence-id (:id path-params)]
+    (if-let [sentence-id (common/parse-uuid sentence-id)]
+      (let [{:keys [status msg]} (cxqs/delete node sentence-id)]
+        (if (= status :ok)
+          (ok)
+          (bad-request msg)))
+      (bad-request "Sentence ID must be a valid java.util.UUID"))))
+
 (defn split-sentence [{:keys [body-params node] :as request}]
   (let [token-id (:token-id body-params)]
     (if-let [token-id (common/parse-uuid token-id)]
       (let [{:keys [status msg new-sentence-id]} (cxqs/split-sentence node token-id)]
         (if (= status :ok)
           (ok {:new-sentence-id new-sentence-id})
-          (bad-request msg)))
-      (bad-request "Sentence ID must be a valid java.util.UUID"))))
-
-(defn delete-sentence [{:keys [body-params node] :as request}]
-  (let [sentence-id (:sentence-id body-params)]
-    (if-let [sentence-id (common/parse-uuid sentence-id)]
-      (let [{:keys [status msg]} (cxqs/delete node sentence-id)]
-        (if (= status :ok)
-          (ok)
           (bad-request msg)))
       (bad-request "Sentence ID must be a valid java.util.UUID"))))
 

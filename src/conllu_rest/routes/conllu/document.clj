@@ -4,6 +4,7 @@
             [conllu-rest.routes.conllu.common :as cc]
             [conllu-rest.xtdb.easy :as cxe]
             [clojure.tools.logging :as log]
+            [conllu-rest.xtdb.queries.document :as cxqd]
             [xtdb.api :as xt]))
 
 (defn document-query [{:keys [node] :as req}]
@@ -28,6 +29,15 @@
                                 (xt/q (xt/db node) query))
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
 
+(defn delete-document [{:keys [path-params node] :as request}]
+  (let [document-id (:id path-params)]
+    (if-let [document-id (common/parse-uuid document-id)]
+      (let [{:keys [status msg]} (cxqd/delete node document-id)]
+        (if (= status :ok)
+          (ok)
+          (bad-request msg)))
+      (bad-request "Document ID must be a valid java.util.UUID"))))
+
 (defn document-routes []
   ["/document"
    [""
@@ -36,8 +46,9 @@
                                 :limit  int?}}
            :handler    document-query}}]
    ["/id/:id"
-    {:get {:summary    "Produce JSON representation of a document"
-           :parameters {:path {:id uuid?}}
-           :handler    cc/get-handler}}]
-
-   ])
+    {:get    {:summary    "Produce JSON representation of a document"
+              :parameters {:path {:id uuid?}}
+              :handler    cc/get-handler}
+     :delete {:summary    "Delete a document and all its contents"
+              :parameters {:path {:id uuid?}}
+              :handler    delete-document}}]])
