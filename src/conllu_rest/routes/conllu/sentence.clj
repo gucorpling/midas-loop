@@ -44,13 +44,12 @@
 (defn sentence-routes []
   ["/sentence"
    ["/id/:id"
-    {:get {:summary    "Produce JSON representation of a sentence"
-           :parameters {:path {:id uuid?}}
-           :handler    cc/get-handler}}]
-   ["/delete/:id"
-    {:post {:summary    "Delete a sentence and all its contents"
-            :parameters {:body {:id uuid?}}
-            :handler    delete-sentence}}]
+    {:get    {:summary    "Produce JSON representation of a sentence"
+              :parameters {:path {:id uuid?}}
+              :handler    cc/get-handler}
+     :delete {:summary    "Delete a sentence and all its contents"
+              :parameters {:path {:id uuid?}}
+              :handler    delete-sentence}}]
    ["/split"
     {:post {:summary     "Split a sentence at a given token ID"
             :description (str "Split a sentence at a given token ID, yielding a new sentence with"
