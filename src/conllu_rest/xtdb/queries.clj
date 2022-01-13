@@ -77,7 +77,7 @@
                 id)))
 
 ;; delete function --------------------------------------------------------------------------
-(defn unlink-in-to-many
+(defn unlink-in-to-many**
   "Given an entity ID and a parent attribute which contains the entity ID in a vector, return a tx that updates
   the parent to exclude the entity ID in the parent attribute."
   [node id pattr]

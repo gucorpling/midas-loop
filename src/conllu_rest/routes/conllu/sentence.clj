@@ -14,6 +14,15 @@
           (bad-request msg)))
       (bad-request "Token ID must be a valid java.util.UUID"))))
 
+(defn delete-sentence [{:keys [body-params node] :as request}]
+  (let [sentence-id (:sentence-id body-params)]
+    (if-let [sentence-id (common/parse-uuid sentence-id)]
+      (let [{:keys [status msg]} (cxqs/delete node sentence-id)]
+        (if (= status :ok)
+          (ok)
+          (bad-request msg)))
+      (bad-request "Token ID must be a valid java.util.UUID"))))
+
 (defn merge-sentence-right [{:keys [body-params node] :as request}]
   (let [sentence-id (:sentence-id body-params)]
     (if-let [sentence-id (common/parse-uuid sentence-id)]
@@ -38,6 +47,10 @@
     {:get {:summary    "Produce JSON representation of a sentence"
            :parameters {:path {:id uuid?}}
            :handler    cc/get-handler}}]
+   ["/delete/:id"
+    {:post {:summary    "Delete a sentence and all its contents"
+            :parameters {:body {:id uuid?}}
+            :handler    delete-sentence}}]
    ["/split"
     {:post {:summary     "Split a sentence at a given token ID"
             :description (str "Split a sentence at a given token ID, yielding a new sentence with"
@@ -56,6 +69,6 @@
             :parameters  {:body {:sentence-id uuid?}}
             :handler     merge-sentence-right}}]
    ["/merge-left"
-    {:post {:summary     "Like merge-right, but to the left."
-            :parameters  {:body {:sentence-id uuid?}}
-            :handler     merge-sentence-left}}]])
+    {:post {:summary    "Like merge-right, but to the left."
+            :parameters {:body {:sentence-id uuid?}}
+            :handler    merge-sentence-left}}]])

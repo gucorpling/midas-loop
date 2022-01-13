@@ -1,10 +1,10 @@
 (ns conllu-rest.xtdb.queries.sentence
-  (:require [conllu-rest.xtdb.queries :refer [write-error write-ok find-index parent]]
+  (:require [conllu-rest.xtdb.queries :as cxq :refer [write-error write-ok]]
             [xtdb.api :as xt]
             [conllu-rest.xtdb.easy :as cxe]))
 
 (defn sentence-from-token [node id]
-  (parent node :sentence/tokens id))
+  (cxq/parent node :sentence/tokens id))
 
 (defn remove-after [seq elt]
   (vec (take-while #(not= % elt) seq)))
@@ -69,7 +69,7 @@
   (locking node
     (let [sentence-id (sentence-from-token node token-id)
           {:sentence/keys [tokens] :as sentence} (cxe/entity node sentence-id)
-          document-id (parent node :document/sentences sentence-id)]
+          document-id (cxq/parent node :document/sentences sentence-id)]
       (cond
         (nil? (cxe/entity node token-id))
         (write-error (str "Token doesn't exist: " token-id))
@@ -113,7 +113,7 @@
   - No sentence in the document exists to the right"
   [node sentence-id]
   (locking node
-    (let [document-id (parent node :document/sentences sentence-id)
+    (let [document-id (cxq/parent node :document/sentences sentence-id)
           {:document/keys [sentences] :as document} (cxe/entity node document-id)]
       (cond
         (nil? (cxe/entity node sentence-id))
@@ -145,7 +145,7 @@
 (defn merge-sentence-left
   [node sentence-id]
   (locking node
-    (let [document-id (parent node :document/sentences sentence-id)
+    (let [document-id (cxq/parent node :document/sentences sentence-id)
           {:document/keys [sentences]} (cxe/entity node document-id)]
       (cond
         (= sentence-id (first sentences))
@@ -154,3 +154,16 @@
         :else
         (let [other-sentence-id (get sentences (dec (find-index sentences sentence-id)))]
           (merge-sentence-right node other-sentence-id))))))
+
+(defn delete [node sentence-id]
+  (locking node
+    (cond (nil? (cxe/entity node sentence-id))
+          (write-error (str "Sentence does not exist: " sentence-id))
+
+          :else
+          (let [base-tx (cxq/delete** node {:sentence/id sentence-id :xt/id sentence-id})
+                remove-join-tx (cxq/unlink-in-to-many** node sentence-id :document/sentences)
+                final-tx (reduce into [base-tx remove-join-tx])]
+            (if (cxe/submit-tx-sync node final-tx)
+              (write-ok)
+              (write-error "Deletion failed"))))))
