@@ -24,7 +24,9 @@
 
 (defn conllu-routes []
   (when (:dev env)
-    (log/warn ":dev is true in config.edn, so authentication is DISABLED"))
+    (log/warn (str "\n\nAUTHENTICATION IS DISABLED, and ANYONE CAN CHANGE YOUR DATA -- :dev is true in config.edn\n"
+                   "If you are running in production, STOP the server and edit your config to have `:dev false`\n"))
+    (Thread/sleep 2000))
   ["/conllu"
    {:swagger    {:tags ["conllu"]}
     :middleware (if (:dev env) [] [wrap-token-auth])}
