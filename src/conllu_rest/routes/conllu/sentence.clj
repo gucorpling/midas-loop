@@ -2,13 +2,13 @@
   (:require [ring.util.http-response :refer :all]
             [conllu-rest.common :as common :refer [error-response nyi-response]]
             [conllu-rest.routes.conllu.common :as cc]
-            [conllu-rest.xtdb.queries :as cxq]
+            [conllu-rest.xtdb.queries.sentence :as cxqs]
             [conllu-rest.xtdb.easy :as cxe]))
 
 (defn split-sentence [{:keys [body-params node] :as request}]
   (let [token-id (:token-id body-params)]
     (if-let [token-id (common/parse-uuid token-id)]
-      (let [{:keys [status msg new-sentence-id]} (cxq/split-sentence node token-id)]
+      (let [{:keys [status msg new-sentence-id]} (cxqs/split-sentence node token-id)]
         (if (= status :ok)
           (ok {:new-sentence-id new-sentence-id})
           (bad-request msg)))
@@ -17,7 +17,7 @@
 (defn merge-sentence-right [{:keys [body-params node] :as request}]
   (let [sentence-id (:sentence-id body-params)]
     (if-let [sentence-id (common/parse-uuid sentence-id)]
-      (let [{:keys [status msg]} (cxq/merge-sentence-right node sentence-id)]
+      (let [{:keys [status msg]} (cxqs/merge-sentence-right node sentence-id)]
         (if (= status :ok)
           (ok)
           (bad-request msg)))
@@ -26,7 +26,7 @@
 (defn merge-sentence-left [{:keys [body-params node] :as request}]
   (let [sentence-id (:sentence-id body-params)]
     (if-let [sentence-id (common/parse-uuid sentence-id)]
-      (let [{:keys [status msg]} (cxq/merge-sentence-left node sentence-id)]
+      (let [{:keys [status msg]} (cxqs/merge-sentence-left node sentence-id)]
         (if (= status :ok)
           (ok)
           (bad-request msg)))
@@ -59,11 +59,3 @@
     {:post {:summary     "Like merge-right, but to the left."
             :parameters  {:body {:sentence-id uuid?}}
             :handler     merge-sentence-left}}]])
-
-
-
-
-
-
-
-

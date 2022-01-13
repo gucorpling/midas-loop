@@ -10,5 +10,6 @@
    ["/id/:id"
     {:get {:summary    "Produce JSON representation of a token"
            :parameters {:path {:id uuid?}}
-           :handler    cc/get-handler}}]])
+           :handler    cc/get-handler}}]
+   ])
 
