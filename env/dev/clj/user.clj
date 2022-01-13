@@ -11,6 +11,8 @@
             [xtdb.api :as xt]
             [conllu-rest.core :refer [start-app]]))
 
+(tools-ns/set-refresh-dirs "src")
+
 (alter-var-root #'s/*explain-out* (constantly expound/printer))
 
 (add-tap (bound-fn* clojure.pprint/pprint))
