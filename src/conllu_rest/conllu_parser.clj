@@ -1,7 +1,8 @@
 (ns conllu-rest.conllu-parser
-  "conllu parsing code"
+  "Code for parsing the 10-column CoNLL-U format. A representation in pure Clojure data structures
+  is returned. Each token is a map, with single-value columns being simply mapped to their type, and
+  multi-value columns (FEATS, MISC) being mapped to a submap of all key-value pairs."
   (:require [clojure.string :as string]))
-
 
 ;; Native implementation
 (defn metadata-line? [line]
@@ -96,6 +97,18 @@
   (def xs (parse-conllu-string data))
 
   (first (:tokens (first xs)))
+
+  ;; =>
+  {:lemma "he",
+   :head 7,
+   :upos "PRON",
+   :feats {"Case" "Nom", "Gender" "Masc", "Number" "Sing", "Person" "3", "PronType" "Prs"},
+   :id 1,
+   :misc {"Discourse" "joint:13->3", "Entity" "(person-1)"},
+   :deprel "nsubj:pass",
+   :form "He",
+   :xpos "PRP",
+   :deps {7 "nsubj:pass"}}
 
   (type (get (first (:tokens (first xs))) "feats"))
 
