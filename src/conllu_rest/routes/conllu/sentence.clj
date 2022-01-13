@@ -12,7 +12,7 @@
         (if (= status :ok)
           (ok {:new-sentence-id new-sentence-id})
           (bad-request msg)))
-      (bad-request "Token ID must be a valid java.util.UUID"))))
+      (bad-request "Sentence ID must be a valid java.util.UUID"))))
 
 (defn delete-sentence [{:keys [body-params node] :as request}]
   (let [sentence-id (:sentence-id body-params)]
@@ -21,7 +21,7 @@
         (if (= status :ok)
           (ok)
           (bad-request msg)))
-      (bad-request "Token ID must be a valid java.util.UUID"))))
+      (bad-request "Sentence ID must be a valid java.util.UUID"))))
 
 (defn merge-sentence-right [{:keys [body-params node] :as request}]
   (let [sentence-id (:sentence-id body-params)]
@@ -30,7 +30,7 @@
         (if (= status :ok)
           (ok)
           (bad-request msg)))
-      (bad-request "Token ID must be a valid java.util.UUID"))))
+      (bad-request "Sentence ID must be a valid java.util.UUID"))))
 
 (defn merge-sentence-left [{:keys [body-params node] :as request}]
   (let [sentence-id (:sentence-id body-params)]
@@ -39,7 +39,7 @@
         (if (= status :ok)
           (ok)
           (bad-request msg)))
-      (bad-request "Token ID must be a valid java.util.UUID"))))
+      (bad-request "Sentence ID must be a valid java.util.UUID"))))
 
 (defn sentence-routes []
   ["/sentence"
