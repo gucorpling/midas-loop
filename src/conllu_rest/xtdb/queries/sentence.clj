@@ -1,7 +1,8 @@
 (ns conllu-rest.xtdb.queries.sentence
   (:require [conllu-rest.xtdb.queries :as cxq :refer [write-error write-ok]]
             [xtdb.api :as xt]
-            [conllu-rest.xtdb.easy :as cxe]))
+            [conllu-rest.xtdb.easy :as cxe])
+  (:import (java.util UUID)))
 
 (defn sentence-from-token [node id]
   (cxq/parent node :sentence/tokens id))
