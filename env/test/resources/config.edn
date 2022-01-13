@@ -1,4 +1,5 @@
 {:conllu-rest.server.xtdb/config
- {:main-db-dir  "xtdb_data"}
+ {:main-db-dir "xtdb_data"}
  :conllu-rest.server.tokens/config
- {:token-db-dir "xtdb_token_data"}}
+ {:token-db-dir "xtdb_token_data"}
+ :dev true}
