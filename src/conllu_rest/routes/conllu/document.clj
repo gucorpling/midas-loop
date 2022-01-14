@@ -65,7 +65,7 @@
                                 :limit  int?}}
            :handler    document-query}}]
    ["/id/:id"
-    {:get    {:summary    (str "Produce JSON representation of a document. Use \"format\" query param to get "
+    {:get    {:summary    (str "Produce representation of a document. Use \"format\" query param to get "
                                "either json or conllu output.")
               :parameters {:path  {:id uuid?}
                            :query {:format (s/spec #{"conllu" "json"})}}
