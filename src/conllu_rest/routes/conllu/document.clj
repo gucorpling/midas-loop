@@ -1,10 +1,12 @@
 (ns conllu-rest.routes.conllu.document
-  (:require [ring.util.http-response :refer :all]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.tools.logging :as log]
+            [ring.util.http-response :refer :all]
             [conllu-rest.common :as common :refer [error-response nyi-response]]
             [conllu-rest.routes.conllu.common :as cc]
             [conllu-rest.xtdb.easy :as cxe]
-            [clojure.tools.logging :as log]
             [conllu-rest.xtdb.queries.document :as cxqd]
+            [conllu-rest.xtdb.serialization :as serial]
             [xtdb.api :as xt]))
 
 (defn document-query [{:keys [node] :as req}]
@@ -29,6 +31,23 @@
                                 (xt/q (xt/db node) query))
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
 
+(defn get-handler [{:keys [query-params path-params node] :as request}]
+  (let [id (:id path-params)
+        conllu? (= (query-params "format") "conllu")]
+    (log/info conllu?)
+    (log/info query-params)
+    (if-let [uuid (common/parse-uuid id)]
+      (if conllu?
+        (let [conllu-string (serial/serialize-document node uuid)]
+          (-> conllu-string
+              ok
+              (header "Content-Type" "application/x-conllu")))
+        (let [result (cxe/entity node uuid)]
+          (if (nil? result)
+            (not-found)
+            (cc/ok* node result))))
+      (bad-request "ID must be a valid java.util.UUID"))))
+
 (defn delete-document [{:keys [path-params node] :as request}]
   (let [document-id (:id path-params)]
     (if-let [document-id (common/parse-uuid document-id)]
@@ -46,9 +65,11 @@
                                 :limit  int?}}
            :handler    document-query}}]
    ["/id/:id"
-    {:get    {:summary    "Produce JSON representation of a document"
-              :parameters {:path {:id uuid?}}
-              :handler    cc/get-handler}
+    {:get    {:summary    (str "Produce JSON representation of a document. Use \"format\" query param to get "
+                               "either json or conllu output.")
+              :parameters {:path  {:id uuid?}
+                           :query {:format (s/spec #{"conllu" "json"})}}
+              :handler    get-handler}
      :delete {:summary    "Delete a document and all its contents"
               :parameters {:path {:id uuid?}}
               :handler    delete-document}}]])
