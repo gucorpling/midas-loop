@@ -6,6 +6,7 @@
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.xtdb.queries.document :as cxqd]
             [conllu-rest.xtdb.serialization :as serial]
+            [spec-tools.data-spec :as ds]
             [xtdb.api :as xt]))
 
 (defn document-query [{:keys [node] :as req}]
@@ -74,7 +75,7 @@
     {:get    {:summary    (str "Produce representation of a document. Use \"format\" query param to get "
                                "either json or conllu output.")
               :parameters {:path  {:id uuid?}
-                           :query {:format (s/spec #{"conllu" "json"})}}
+                           :query {:format (ds/maybe (s/spec #{"conllu" "json"}))}}
               :handler    get-handler}
      :delete {:summary    "Delete a document and all its contents"
               :parameters {:path {:id uuid?}}
