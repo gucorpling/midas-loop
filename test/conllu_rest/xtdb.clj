@@ -119,16 +119,7 @@
         _ (cxc/create-document node parsed-data)
         juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
                                                    :where [[?t :token/form ?f]
-                                                           [?f :form/value "Juan"]]}))
-        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "frequently"]]}))
-        last-sent-id (ffirst (xt/q (xt/db node) '{:find  [?s]
-                                                  :where [[?s :sentence/conllu-metadata ?cm]
-                                                          [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-3"]]}))
-        first-sent-id (ffirst (xt/q (xt/db node) '{:find  [?s]
-                                                   :where [[?s :sentence/conllu-metadata ?cm]
-                                                           [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-1"]]}))]
+                                                           [?f :form/value "Juan"]]}))]
 
     (testing "Form is writeable"
       (let [form-id (:token/form juan-token-id)]
