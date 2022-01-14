@@ -1,4 +1,4 @@
-(ns conllu-rest.xtdb
+(ns conllu-rest.xtdb-test
   "Integration tests covering "
   (:require [clojure.test :refer :all]
             [xtdb.api :as xt]
@@ -37,7 +37,7 @@
 # s_type = frag
 # text = Juan de Cartagena
 # newpar = head (1 s)
-1-2	Juan	Juan	_	_	_	_	_	_	_
+1-2	Juande	Juande	_	_	_	_	_	_	_
 1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
 2	de	de	PROPN	NNP	Number=Sing	1	flat	1:flat	_
 2.1	foo	foo	_	_	_	_	_	_	_
@@ -119,18 +119,68 @@
         _ (cxc/create-document node parsed-data)
         juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
                                                    :where [[?t :token/form ?f]
-                                                           [?f :form/value "Juan"]]}))]
+                                                           [?f :form/value "Juan"]]}))
+        juan-token (cxe/entity node juan-token-id)
+        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "frequently"]]}))]
 
     (testing "Form is writeable"
-      (let [form-id (:token/form juan-token-id)]
+      (let [form-id (:token/form juan-token)]
         (cxqt/put node {:form/id form-id :form/value "juan"} :form/id)
         (= (:form/value (cxe/entity node form-id)) "juan")))
 
     (testing "Putting with the wrong ID fails"
-      (is (= :error (:status (cxqt/put node {:form/id juan-token-id :form/value "foo"} :form/id)))))
+      (is (= :error (:status (cxqt/put node {:form/id juan-token-id :form/value "foo"} :form/id)))))))
 
+(deftest assoc-values
+  (let [parsed-data (parser/parse-conllu-string data)
+        _ (cxc/create-document node parsed-data)
+        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "Juan"]]}))
+        juan-token (cxe/entity node juan-token-id)
+        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "frequently"]]}))]
     (testing "Deleting assoc column works"
-      (let [feats-ids (:token/feats (cxe/entity node juan-token-id))
+      (let [feats-ids (:token/feats juan-token)
             pre-count (count feats-ids)]
         (cxqt/delete-assoc node (first feats-ids) :feats/id)
         (is (= pre-count (inc (count (:token/feats (cxe/entity node juan-token-id))))))))))
+
+(deftest dep-values
+  (let [parsed-data (parser/parse-conllu-string data)
+        _ (cxc/create-document node parsed-data)
+        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "Juan"]]}))
+        juan-token (cxe/entity node juan-token-id)
+        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "frequently"]]}))]
+    (testing "Putting head works and also updates deps"
+      (let [head-id (:token/head juan-token)
+            deps-id (first (:token/deps juan-token))]
+        (is (= :ok (:status (cxqt/put-head node {:head/id head-id :head/value freq-token-id}))))
+        (is (= freq-token-id (:head/value (cxe/entity node head-id))))
+        (is (= freq-token-id (:deps/key (cxe/entity node deps-id))))
+
+        (is (= :ok (:status (cxqt/put-head node {:head/id head-id :head/value :root}))))
+        (is (= :root (:head/value (cxe/entity node head-id))))
+        (is (= :root (:deps/key (cxe/entity node deps-id))))
+
+        (is (= :ok (:status (cxqt/put-head node {:head/id head-id :head/value nil}))))
+        (is (= nil (:head/value (cxe/entity node head-id))))
+        (is (= nil (:deps/key (cxe/entity node deps-id))))))
+
+    (testing "Putting deprel works and also updates deps"
+      (let [deprel-id (:token/deprel juan-token)
+            deps-id (first (:token/deps juan-token))]
+        (is (= :ok (:status (cxqt/put-deprel node {:deprel/id deprel-id :deprel/value "orphan"}))))
+        (is (= "orphan" (:deprel/value (cxe/entity node deprel-id))))
+        (is (= "orphan" (:deps/value (cxe/entity node deps-id))))
+
+        (is (= :ok (:status (cxqt/put-deprel node {:deprel/id deprel-id :deprel/value nil}))))
+        (is (= nil (:deprel/value (cxe/entity node deprel-id))))
+        (is (= nil (:deps/value (cxe/entity node deps-id))))))))

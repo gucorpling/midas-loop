@@ -3,10 +3,8 @@
             [conllu-rest.common :as common :refer [error-response nyi-response]]
             [conllu-rest.routes.conllu.common :as cc]
             [conllu-rest.xtdb.easy :as cxe]
-            [conllu-rest.xtdb.queries.token :as cxqt]))
-
-
-(def nop (constantly nil))
+            [conllu-rest.xtdb.queries.token :as cxqt]
+            [spec-tools.data-spec :as ds]))
 
 (defn- ia [colname]
   (if (#{"xpos"} colname)
@@ -36,6 +34,30 @@
             (ok)
             (bad-request msg)))
         (bad-request "Sentence ID must be a valid java.util.UUID")))))
+
+(defn put-head [{:keys [path-params body-params node] :as req}]
+  (let [id (:id path-params)]
+    (if-let [id (common/parse-uuid id)]
+      (let [{:keys [status msg]} (cxqt/put-head node
+                                                {:head/id    id
+                                                 :head/value (if (= "root" (:value body-params))
+                                                               :root
+                                                               (:value body-params))})]
+        (if (= status :ok)
+          (ok)
+          (bad-request msg)))
+      (bad-request "Sentence ID must be a valid java.util.UUID"))))
+
+(defn put-deprel [{:keys [path-params body-params node] :as req}]
+  (let [id (:id path-params)]
+    (if-let [id (common/parse-uuid id)]
+      (let [{:keys [status msg]} (cxqt/put-deprel node
+                                                  {:deprel/id    id
+                                                   :deprel/value (:value body-params)})]
+        (if (= status :ok)
+          (ok)
+          (bad-request msg)))
+      (bad-request "Sentence ID must be a valid java.util.UUID"))))
 
 (defn token-routes []
   ["/token"
@@ -84,11 +106,14 @@
      {:get {:summary    (str "Produce JSON representation of a head annotation")
             :parameters {:path {:id uuid?}}
             :handler    (cc/get-handler :head/id)}
-      :put {:summary    (str "Update a head annotation. Pass a JSON as body with a \"value\" key."
-                             " If the value is `null`, deprel will also be nulled out.")
-            :parameters {:path {:id uuid?}
-                         :body {:value string?}}
-            :handler    nop}}]]
+      :put {:summary     (str "Update a head annotation. Pass a JSON as body with a \"value\" key.")
+            :description (str "The value should be one of three things: \n"
+                              " \"root\" - special value for the head token of a sentence\n"
+                              " null - if you wish to reset the value of the head\n"
+                              " <uuid> - a uuid pointing to a valid *TOKEN*. Make sure this is not anything else.")
+            :parameters  {:path {:id uuid?}
+                          :body {:value any?}}
+            :handler     put-head}}]]
    ["/deprel"
     ["/id/:id"
      {:get {:summary    (str "Produce JSON representation of a deprel annotation")
@@ -97,4 +122,4 @@
       :put {:summary    (str "Update a deprel annotation. Pass a JSON as body with a \"value\" key.")
             :parameters {:path {:id uuid?}
                          :body {:value string?}}
-            :handler    nop}}]]])
+            :handler    put-deprel}}]]])

@@ -29,6 +29,13 @@
     <logger name="io.undertow.websockets.core.request" level="warn" />
     <logger name="io.undertow.request" level="warn" />
     <logger name="io.undertow.session" level="warn" />
+    <logger name="xtdb.query" level="warn" />
+    <logger name="xtdb.system" level="warn" />
+    <logger name="xtdb.memory" level="warn" />
+    <logger name="xtdb.mem-kv" level="warn" />
+    <logger name="xtdb.api" level="warn" />
+    <logger name="xtdb.hash" level="warn" />
+    <logger name="xtdb.tx" level="warn" />
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
