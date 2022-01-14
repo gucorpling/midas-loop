@@ -7,7 +7,10 @@
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.xtdb.serialization :as cxs]
             [conllu-rest.xtdb.creation :as cxc]
-            [conllu-rest.xtdb.queries :as cxq]))
+            [conllu-rest.xtdb.queries :as cxq]
+            [conllu-rest.xtdb.queries.document :as cxqd]
+            [conllu-rest.xtdb.queries.sentence :as cxqs]
+            [conllu-rest.xtdb.queries.token :as cxqt]))
 
 (def ^:dynamic node nil)
 
@@ -88,10 +91,10 @@
                                                    :where [[?s :sentence/conllu-metadata ?cm]
                                                            [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-1"]]}))]
     (testing "Splitting a sentence fails if the token is at the beginning of a sentence"
-      (= :error (:status (cxq/split-sentence node juan-token-id))))
+      (= :error (:status (cxqs/split-sentence node juan-token-id))))
 
     (testing "Splitting a sentence is OK if the token is not at the beginning of a sentence"
-      (= :ok (:status (cxq/split-sentence node freq-token-id)))
+      (= :ok (:status (cxqs/split-sentence node freq-token-id)))
       (= 3 (count (cxe/find-entities node {:sentence/id '_})))
       (= 6 (count (:sentence/tokens (xt/pull (xt/db node) [{:sentence/tokens [:token/id]}] first-sent-id))))
       (= 12 (count (:sentence/tokens (xt/pull (xt/db node) [{:sentence/tokens [:token/id]}] last-sent-id))))
@@ -105,8 +108,38 @@
       )
 
     (testing "Merging a sentence fails if it's the last sentence in a document"
-      (= :error (:status (cxq/merge-sentence-right node last-sent-id))))
+      (= :error (:status (cxqs/merge-sentence-right node last-sent-id))))
 
     (testing "Merging a sentence OK if it's the last sentence in a document"
-      (= :ok (:status (cxq/merge-sentence-right node first-sent-id)))
+      (= :ok (:status (cxqs/merge-sentence-right node first-sent-id)))
       (= 2 (count (cxe/find-entities node {:sentence/id '_}))))))
+
+(deftest atomic-values
+  (let [parsed-data (parser/parse-conllu-string data)
+        _ (cxc/create-document node parsed-data)
+        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "Juan"]]}))
+        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
+                                                   :where [[?t :token/form ?f]
+                                                           [?f :form/value "frequently"]]}))
+        last-sent-id (ffirst (xt/q (xt/db node) '{:find  [?s]
+                                                  :where [[?s :sentence/conllu-metadata ?cm]
+                                                          [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-3"]]}))
+        first-sent-id (ffirst (xt/q (xt/db node) '{:find  [?s]
+                                                   :where [[?s :sentence/conllu-metadata ?cm]
+                                                           [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-1"]]}))]
+
+    (testing "Form is writeable"
+      (let [form-id (:token/form juan-token-id)]
+        (cxqt/put node {:form/id form-id :form/value "juan"} :form/id)
+        (= (:form/value (cxe/entity node form-id)) "juan")))
+
+    (testing "Putting with the wrong ID fails"
+      (is (= :error (:status (cxqt/put node {:form/id juan-token-id :form/value "foo"} :form/id)))))
+
+    (testing "Deleting assoc column works"
+      (let [feats-ids (:token/feats (cxe/entity node juan-token-id))
+            pre-count (count feats-ids)]
+        (cxqt/delete-assoc node (first feats-ids) :feats/id)
+        (is (= pre-count (inc (count (:token/feats (cxe/entity node juan-token-id))))))))))

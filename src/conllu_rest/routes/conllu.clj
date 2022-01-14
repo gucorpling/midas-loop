@@ -17,7 +17,7 @@
             [conllu-rest.routes.conllu.document :refer [document-routes]]
             [conllu-rest.routes.conllu.sentence :refer [sentence-routes]]
             [conllu-rest.routes.conllu.conllu-metadata :refer [conllu-metadata-routes]]
-            [conllu-rest.routes.conllu.token :refer [token-routes atomic-routes]]
+            [conllu-rest.routes.conllu.token :refer [token-routes atomic-routes associative-routes dep-routes]]
             [conllu-rest.common :as common]
             [conllu-rest.xtdb.serialization :refer [serialize-document]]))
 
@@ -39,6 +39,9 @@
    (atomic-routes "lemma")
    (atomic-routes "upos")
    (atomic-routes "xpos")
+   (associative-routes "feats")
+   (dep-routes)
+   (associative-routes "misc")
 
    ["/files"
     ["/upload"

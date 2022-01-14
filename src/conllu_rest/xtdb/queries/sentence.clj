@@ -28,36 +28,6 @@
       (let [[before after] (split-at (inc idx) seq)]
         (vec (concat before [added-elt] after))))))
 
-(defn remove-invalid-deps
-  "Checks head, deprel, and deps and removes any entries that point to tokens which are not in token-ids.
-  Useful for post-processing a sentence split. Returns a transaction vector--no side effects.."
-  [node token-ids]
-  (let [tokens (map #(xt/pull (xt/db node)
-                              [:token/id
-                               {:token/head [:head/value :head/id]}
-                               {:token/deprel [:deprel/value :deprel/id]}
-                               {:token/deps [:deps/key :deps/value :deps/id]}]
-                              %)
-                    token-ids)
-        txs (atom [])]
-    (doseq [token tokens]
-      (let [token-ids (conj (set token-ids) :root)
-            {head-id :head/id head-value :head/value} (:token/head token)
-            {deprel-id :deprel/id} (:token/deprel token)]
-        (when-not (token-ids head-value)
-          (swap! txs conj (cxe/put* (assoc (cxe/entity node head-id) :head/value nil)))
-          (swap! txs conj (cxe/put* (assoc (cxe/entity node deprel-id) :deprel/value nil))))
-
-        (let [orig-deps (:token/deps token)
-              new-deps (atom orig-deps)]
-          (doseq [{deps-id :deps/id head-id :deps/key :as dep} (:token/deps token)]
-            (when-not (token-ids head-id)
-              (swap! txs conj (cxe/delete* deps-id))
-              (swap! new-deps #(filterv (fn [e] (not= (:deps/id e) deps-id)) %))))
-          (when-not (= @new-deps orig-deps)
-            (swap! txs conj (cxe/put* (assoc (cxe/entity node (:token/id token)) :token/deps (mapv :deps/id @new-deps))))))))
-    @txs))
-
 (defn split-sentence
   "Split an existing sentence at a given token, including the token in the new sentence to the right and
   keeping the existing sentence's record for the tokens to the left. Error conditions:
@@ -101,7 +71,7 @@
               txs [(cxe/put* updated-sentence)
                    (cxe/put* new-sentence-record)
                    (cxe/put* updated-document)]
-              txs (concat txs (remove-invalid-deps node left-tokens) (remove-invalid-deps node right-tokens))]
+              txs (concat txs (cxq/remove-invalid-deps** node left-tokens) (cxq/remove-invalid-deps** node right-tokens))]
           (if (cxe/submit-tx-sync node txs)
             (assoc (write-ok) :new-sentence-id new-sentence-id)
             (write-error "Internal XTDB error")))))))
