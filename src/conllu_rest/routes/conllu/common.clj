@@ -22,11 +22,17 @@
         m (remove-namespaces m)]
     (ok m)))
 
-(defn get-handler [{:keys [path-params node] :as request}]
-  (let [id (:id path-params)]
-    (if-let [uuid (common/parse-uuid id)]
-      (let [result (cxe/entity node uuid)]
-        (if (nil? result)
-          (not-found)
-          (ok* node result)))
-      (bad-request "ID must be a valid java.util.UUID"))))
+(defn get-handler [id-keyword]
+  (fn [{:keys [path-params node] :as request}]
+    (let [id (:id path-params)]
+      (if-let [uuid (common/parse-uuid id)]
+        (let [result (cxe/entity node uuid)]
+          (cond (nil? result)
+                (not-found)
+
+                (not (id-keyword result))
+                (bad-request (str "Entity with id " uuid " exists but is not a " (namespace id-keyword)))
+
+                :else
+                (ok* node result)))
+        (bad-request "ID must be a valid java.util.UUID")))))

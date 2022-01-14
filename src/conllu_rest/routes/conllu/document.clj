@@ -1,6 +1,5 @@
 (ns conllu-rest.routes.conllu.document
   (:require [clojure.spec.alpha :as s]
-            [clojure.tools.logging :as log]
             [ring.util.http-response :refer :all]
             [conllu-rest.common :as common :refer [error-response nyi-response]]
             [conllu-rest.routes.conllu.common :as cc]
@@ -34,18 +33,25 @@
 (defn get-handler [{:keys [query-params path-params node] :as request}]
   (let [id (:id path-params)
         conllu? (= (query-params "format") "conllu")]
-    (log/info conllu?)
-    (log/info query-params)
     (if-let [uuid (common/parse-uuid id)]
-      (if conllu?
-        (let [conllu-string (serial/serialize-document node uuid)]
-          (-> conllu-string
-              ok
-              (header "Content-Type" "application/x-conllu")))
-        (let [result (cxe/entity node uuid)]
-          (if (nil? result)
-            (not-found)
-            (cc/ok* node result))))
+      (let [record (cxe/entity node uuid)]
+        (cond (nil? record)
+              (not-found)
+
+              (not (:document/id record))
+              (bad-request (str "Node with ID " uuid " exists but is not a document."))
+
+              conllu?
+              (let [conllu-string (serial/serialize-document node uuid)]
+                (-> conllu-string
+                    ok
+                    (header "Content-Type" "application/x-conllu")))
+
+              :else
+              (let [result (cxe/entity node uuid)]
+                (if (nil? result)
+                  (not-found)
+                  (cc/ok* node result)))))
       (bad-request "ID must be a valid java.util.UUID"))))
 
 (defn delete-document [{:keys [path-params node] :as request}]

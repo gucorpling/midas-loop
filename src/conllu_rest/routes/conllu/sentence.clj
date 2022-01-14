@@ -46,7 +46,7 @@
    ["/id/:id"
     {:get    {:summary    "Produce JSON representation of a sentence"
               :parameters {:path {:id uuid?}}
-              :handler    cc/get-handler}
+              :handler    (cc/get-handler :sentence/id)}
      :delete {:summary    "Delete a sentence and all its contents"
               :parameters {:path {:id uuid?}}
               :handler    delete-sentence}}]
