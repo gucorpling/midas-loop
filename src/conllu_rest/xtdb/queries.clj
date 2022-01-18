@@ -8,7 +8,7 @@
             [clojure.walk :refer [postwalk]])
   (:import (java.util UUID)))
 
-;; pulls
+;; pulls --------------------------------------------------------------------------------
 (defn- get-typed-id [m]
   (let [typed-id (ffirst (filter (fn [[k _]] (and (= (name k) "id")
                                                   (not= (namespace k) "xt")))
@@ -57,7 +57,58 @@
   [node m]
   (xt/pull (xt/db node) (get-pull-fragment (get-typed-id m)) (:xt/id m)))
 
-;; helpers
+;; sentence id lookup --------------------------------------------------------------------------------
+(defn- keys-in
+  "Returns a sequence of all key paths in a given map using DFS walk.
+  From: https://dnaeon.github.io/clojure-map-ks-paths/"
+  [m]
+  (letfn [(children [node]
+            (let [v (get-in m node)]
+              (if (map? v)
+                (map (fn [x] (conj node x)) (keys v))
+                [])))
+          (branch? [node] (-> (children node) seq boolean))]
+    (->> (keys m)
+         (map vector)
+         (mapcat #(tree-seq branch? children %)))))
+
+(defn- get-map-pull-fragment [x]
+  (->> x
+       get-pull-fragment
+       (postwalk (fn [x]
+                   (if (vector? x)
+                     (into {} (map (fn [v] (if (keyword? v) [v v] [(first (keys v)) v])) x))
+                     x)))))
+
+;; Stores k-v pairs, where k is an ID type that is stored below or at the sentence level, and
+;; v is a path of join attributes that take you from the sentence to the id type. Example:
+;; {:conllu-metadata/id [:sentence/conllu-metadata :conllu-metadata/id]}
+(def ^:private sentence-paths
+  (->> (get-map-pull-fragment :sentence/id)
+       keys-in
+       (filter #(and (= "id" (-> % last name))
+                     (let [[a b] (take-last 2 %)]
+                       (not= a b))))
+       (map (fn [v] [(last v) v]))
+       (reduce conj {})))
+
+(defn get-sentence-id
+  "Find the sentence ID for a child, e.g. :form/id ::form"
+  [node id-type id]
+  (if (nil? (sentence-paths id-type))
+    nil
+    (let [attrs (sentence-paths id-type)
+          query-symbols (concat ['?s] (map #(symbol (str "?" %)) (range (dec (count attrs)))) ['?input])
+          symbol-pairs (partition 2 1 query-symbols)
+          triples (mapv (fn [attr [v1 v2]] [v1 attr v2])
+                       attrs
+                       symbol-pairs)
+          query {:find  ['?s]
+                 :where triples
+                 :input ['?input]}]
+      (ffirst (xt/q (xt/db node) query id)))))
+
+;; helpers --------------------------------------------------------------------------------
 (defn write-error [msg]
   {:status :error :msg msg})
 

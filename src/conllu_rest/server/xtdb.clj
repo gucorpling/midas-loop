@@ -21,8 +21,9 @@
 
 
 (defstate xtdb-node
-  :start (let [node (start-main-node)]
+  :start (let [node (start-main-node)
+               f (partial xtdb-listen node)]
            (install-tx-fns! node)
-           (xt/listen node {::xt/event-type ::xt/indexed-tx, :with-tx-ops? true} xtdb-listen)
+           (xt/listen node {::xt/event-type ::xt/indexed-tx, :with-tx-ops? true} f)
            node)
   :stop (.close xtdb-node))
