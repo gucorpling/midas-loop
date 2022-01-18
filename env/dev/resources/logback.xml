@@ -32,6 +32,7 @@
     <logger name="xtdb.memory" level="warn" />
     <logger name="xtdb.tx" level="warn" />
     <logger name="xtdb.lmdb" level="warn" />
+    <logger name="xtdb.query" level="warn" />
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
