@@ -3,6 +3,7 @@
             [mount.core :refer [defstate]]
             [conllu-rest.xtdb.easy :refer [install-tx-fns!]]
             [conllu-rest.server.config :refer [env]]
+            [conllu-rest.server.nlp :refer [xtdb-listen]]
             [clojure.java.io :as io])
   (:import [xtdb.api IXtdb]))
 
@@ -18,8 +19,10 @@
   (start-standalone-xtdb-node {:db-dir           (-> env ::config :main-db-dir)
                                :http-server-port (-> env ::config :http-server-port)}))
 
+
 (defstate xtdb-node
   :start (let [node (start-main-node)]
            (install-tx-fns! node)
+           (xt/listen node {::xt/event-type ::xt/indexed-tx, :with-tx-ops? true} xtdb-listen)
            node)
   :stop (.close xtdb-node))
