@@ -80,11 +80,11 @@
                                       (cxe/entity node))]
     (if (nil? matching-deps-record)
       ;; Create a new one
-      [(cxe/put* (cxe/create-record "deps" {:deps/key   new-val
-                                            :deps/value nil}))]
+      (let [{:deps/keys [id] :as record} (cxe/create-record "deps" {:deps/key   new-val
+                                                                    :deps/value nil})]
+        (into (cxq/link-in-to-many** node id token-id :token/deps) [(cxe/put* record)]))
       ;; Update the existing one
-      [(cxe/put* (merge matching-deps-record {:deps/key new-val}))]
-      )))
+      [(cxe/put* (merge matching-deps-record {:deps/key new-val}))])))
 
 (defn put-head
   "update HEAD and also deep DEPS in sync"
@@ -137,11 +137,12 @@
                                       (cxe/entity node))]
     (if (nil? matching-deps-record)
       ;; Create a new one
-      [(cxe/put* (cxe/create-record "deps" {:deps/key   nil
-                                            :deps/value new-val}))]
+      (let [{:deps/keys [id] :as record} (cxe/create-record "deps" {:deps/key   nil
+                                                                    :deps/value new-val})]
+        (into (cxq/link-in-to-many** node id token-id :token/deps)
+              [(cxe/put* record)]))
       ;; Update the existing one
-      [(cxe/put* (merge matching-deps-record {:deps/value new-val}))]
-      )))
+      [(cxe/put* (merge matching-deps-record {:deps/value new-val}))])))
 
 (defn put-deprel
   "update DEPREL and also deep DEPS in sync"
