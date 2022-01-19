@@ -32,7 +32,6 @@
                  [selmer "1.12.44"]
                  [jumblerg/ring-cors "2.0.0"]
                  [clj-http "3.12.3"]
-                 [duratom/duratom "0.5.3"]
 
                  [com.xtdb/xtdb-core "1.19.0-beta1"]
                  [com.xtdb/xtdb-lmdb "1.19.0-beta1"]
