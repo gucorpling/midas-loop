@@ -42,6 +42,9 @@
           {:sentence/keys [tokens] :as sentence} (cxe/entity node sentence-id)
           document-id (cxq/parent node :document/sentences sentence-id)]
       (cond
+        (seq (cxe/find-entities node [[:token/subtokens token-id]]))
+        (write-error (str "Cannot split a sentence on a subtoken of a super token: " token-id))
+
         (nil? (cxe/entity node token-id))
         (write-error (str "Token doesn't exist: " token-id))
 
