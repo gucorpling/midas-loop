@@ -53,6 +53,7 @@
   NLP agents that they need to be processed."
   [node {:xtdb.api/keys [tx-ops] :as event}]
   ;; Get affected sentence IDs by inspecting puts
+  ;; TODO: this seems to work for now, but may be subtly wrong/not work in the future
   (let [sentence-ids (if (document-creation-transaction? tx-ops)
                        (get-sentence-ids-creation node tx-ops)
                        (get-sentence-ids-general node tx-ops))]
