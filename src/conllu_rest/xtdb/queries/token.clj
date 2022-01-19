@@ -91,7 +91,12 @@
   [node {:head/keys [id value] :as m}]
   (locking node
     (let [entity (cxe/entity node id)
-          parsed-value (if (string? value) (common/parse-uuid value) value)
+          parsed-value (cond (= value "root")
+                             :root
+                             (string? value)
+                             (common/parse-uuid value)
+                             :else
+                             value)
           target-entity (cxe/entity node parsed-value)
           real-target? (uuid? parsed-value)]
       (cond (and (string? value) (nil? parsed-value))
@@ -100,14 +105,20 @@
             (nil? entity)
             (write-error (str "Entity does not exist: " entity))
 
-            (and real-target? (not (:head/id entity)))
+            (not (:head/id entity))
             (write-error (str "Entity is not a head: " entity))
 
             (and real-target? (nil? target-entity))
-            (write-error (str "Head does not exist: " target-entity))
+            (write-error (str "Token to serve as target of new head value does not exist: " target-entity))
 
             (and real-target? (not (:token/id target-entity)))
-            (write-error (str "Head must be a valid token: " target-entity))
+            (write-error (str "Target of new head value must be a valid token: " target-entity))
+
+            (and real-target? (not (#{:token :empty} (:token/token-type target-entity))))
+            (write-error (str "Head token must be a regular or empty token (not a supertoken): " target-entity))
+
+            (and (not real-target?) (not (or (= parsed-value nil) (= parsed-value :root))))
+            (write-error (str "New value for head annotation must be either a valid token, \"root\", or null; got: " parsed-value))
 
             :else
             (let [tx [(cxe/put* (merge entity {:head/id id :head/value parsed-value}))]

@@ -50,9 +50,7 @@
     (if-let [id (common/parse-uuid id)]
       (let [{:keys [status msg]} (cxqt/put-head node
                                                 {:head/id    id
-                                                 :head/value (if (= "root" (:value body-params))
-                                                               :root
-                                                               (:value body-params))})]
+                                                 :head/value (:value body-params)})]
         (if (= status :ok)
           (ok)
           (bad-request msg)))
