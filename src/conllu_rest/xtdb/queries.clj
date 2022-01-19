@@ -55,7 +55,8 @@
   "Given a node and a map like {:token/id ::id}, return a complete map of everything on that
   entity as well as everything \"under\" it."
   [node m]
-  (xt/pull (xt/db node) (get-pull-fragment (get-typed-id m)) (:xt/id m)))
+  (when (xt/entity (xt/db node) (:xt/id m))
+    (xt/pull (xt/db node) (get-pull-fragment (get-typed-id m)) (:xt/id m))))
 
 ;; sentence id lookup --------------------------------------------------------------------------------
 (defn- keys-in
@@ -135,6 +136,16 @@
   (let [parent-entity (cxe/entity node (parent node pattr id))]
     (-> parent-entity
         (update pattr (fn [ids] (filterv #(not= % id) ids)))
+        cxe/put*
+        vector)))
+
+(defn link-in-to-many**
+  "Given an entity ID and a parent attribute which contains the entity ID in a vector, return a tx that updates
+  the parent to exclude the entity ID in the parent attribute."
+  [node id parent-id pattr]
+  (let [parent-entity (cxe/entity node parent-id)]
+    (-> parent-entity
+        (update pattr conj id)
         cxe/put*
         vector)))
 
