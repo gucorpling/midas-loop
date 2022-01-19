@@ -41,6 +41,37 @@
                 (write-ok)
                 (write-error "Deletion failed")))))))
 
+(defn create-assoc
+  "Only for use with MISC and FEATS--other columns should use put with nil value"
+  [node token-id id-keyword key value]
+  (locking node
+    (let [colname (namespace id-keyword)
+          token (cxq/pull node {:xt/id token-id :token/id token-id})
+          join-keyword (keyword "token" colname)
+          siblings (join-keyword token)
+          key-keyword (keyword colname "key")]
+      (cond (or (not (string? key)) (empty? key))
+            (write-error (str "Key must be a non-empty string:" key))
+
+            (not (string? value))
+            (write-error (str "Value must be a string:" key))
+
+            (nil? token)
+            (write-error (str "Token doesn't exist: " token-id))
+
+            (some #(= (key-keyword %) key) siblings)
+            (write-error (str "Token already has a record in " colname " with key " key))
+
+            :else
+            (let [{:xt/keys [id] :as record} (cxe/create-record colname {(keyword colname "key")   key
+                                                                         (keyword colname "value") value})
+                  base-tx [(cxe/put* record)]
+                  add-join-tx (cxq/link-in-to-many** node id token-id (keyword "token" colname))
+                  final-tx (reduce into [base-tx add-join-tx])]
+              (if (cxe/submit-tx-sync node final-tx)
+                (write-ok)
+                (write-error "Creation failed")))))))
+
 (defn get-head-deps-tx [node head-id old-val new-val]
   (let [token-id (cxq/parent node :token/head head-id)
         {:token/keys [deps]} (cxq/pull node {:token/id token-id :xt/id token-id})

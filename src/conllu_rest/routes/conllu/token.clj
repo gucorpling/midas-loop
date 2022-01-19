@@ -23,7 +23,7 @@
           (if (= status :ok)
             (ok)
             (bad-request msg)))
-        (bad-request "Sentence ID must be a valid java.util.UUID")))))
+        (bad-request "ID must be a valid java.util.UUID")))))
 
 (defn delete-assoc [id-keyword]
   (fn delete [{:keys [path-params node] :as req}]
@@ -33,7 +33,17 @@
           (if (= status :ok)
             (ok)
             (bad-request msg)))
-        (bad-request "Sentence ID must be a valid java.util.UUID")))))
+        (bad-request "Token ID must be a valid java.util.UUID")))))
+
+(defn create-assoc [id-keyword]
+  (fn delete [{:keys [body-params node] :as req}]
+    (let [{:keys [key value token-id]} body-params]
+      (if-let [token-id (common/parse-uuid token-id)]
+        (let [{:keys [status msg]} (cxqt/create-assoc node token-id id-keyword key value)]
+          (if (= status :ok)
+            (ok)
+            (bad-request msg)))
+        (bad-request "Token ID must be a valid java.util.UUID")))))
 
 (defn put-head [{:keys [path-params body-params node] :as req}]
   (let [id (:id path-params)]
@@ -46,7 +56,7 @@
         (if (= status :ok)
           (ok)
           (bad-request msg)))
-      (bad-request "Sentence ID must be a valid java.util.UUID"))))
+      (bad-request "ID must be a valid java.util.UUID"))))
 
 (defn put-deprel [{:keys [path-params body-params node] :as req}]
   (let [id (:id path-params)]
@@ -57,7 +67,7 @@
         (if (= status :ok)
           (ok)
           (bad-request msg)))
-      (bad-request "Sentence ID must be a valid java.util.UUID"))))
+      (bad-request "ID must be a valid java.util.UUID"))))
 
 (defn token-routes []
   ["/token"
@@ -83,10 +93,12 @@
              :handler    (put id-keyword)}}]]))
 
 ;; MISC and FEATS
-;; Currently unsupported: creating a new one from scratch
 (defn associative-routes [colname]
   (let [id-keyword (keyword colname "id")]
     [(str "/" colname)
+     {:post {:summary    (str "Create a new " colname " annotation. Pass a JSON body with \"key\" and \"value\".")
+             :parameters {:body {:key string? :value string?}}
+             :handler    (create-assoc id-keyword)}}
      ["/id/:id"
       {:get    {:summary    (str "Produce JSON representation of " (ia colname) " " colname " annotation")
                 :parameters {:path {:id uuid?}}
