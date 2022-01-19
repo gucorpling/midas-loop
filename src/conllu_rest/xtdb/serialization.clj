@@ -17,7 +17,16 @@
    (let [kv-records (map #(cxe/entity node %) ((keyword "token" name) token))
          k-key (keyword name "key")
          v-key (keyword name "value")
-         kv-strings (map #(str (key-xform (k-key %)) kv-sep (v-key %)) kv-records)]
+         kv-strings (map (fn [v]
+                           (let [k (k-key v)
+                                 v (v-key v)]
+                             (if (or (nil? k)
+                                     (nil? v)
+                                     (and (string? k) (empty? k)))
+                               nil
+                               (str (key-xform k) kv-sep v))))
+                         kv-records)
+         kv-strings (remove nil? kv-strings)]
      (if (empty? kv-strings)
        "_"
        (clojure.string/join "|" kv-strings)))))
