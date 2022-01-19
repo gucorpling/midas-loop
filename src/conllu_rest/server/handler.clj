@@ -36,5 +36,5 @@
          :not-acceptable
          (constantly (error-response {:status 406, :body "406 - Not acceptable"}))}))))
 
-(defn app []
-  (middleware/wrap-base #'app-routes))
+(defn app [node token-node]
+  (middleware/wrap-base node token-node #'app-routes))

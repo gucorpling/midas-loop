@@ -11,8 +11,6 @@
             [conllu-rest.server.config :refer [env]]
             [conllu-rest.env :refer [defaults]]
             [conllu-rest.common :refer [error-response]]
-            [conllu-rest.server.xtdb :refer [xtdb-node]]
-            [conllu-rest.server.tokens :refer [xtdb-token-node]]
             [jumblerg.middleware.cors :refer [wrap-cors]]))
 
 (def muuntaja-instance
@@ -40,14 +38,14 @@
                          :title   "Something very bad has happened!"
                          :message "Let Luke know."})))))
 
-(defn wrap-base [handler]
+(defn wrap-base [node token-node handler]
   (let [wrap-cors* (fn [handler pats]
                      (apply wrap-cors handler pats))
         cors-patterns (concat [#".*localhost.*"] (map re-pattern (:cors-patterns env)))]
     (-> ((:middleware defaults) handler)
         (wrap-cors* cors-patterns)
-        (include-database :node xtdb-node)
-        (include-database :token-node xtdb-token-node)
+        (include-database :node node)
+        (include-database :token-node token-node)
         wrap-flash
         (wrap-defaults
           (-> site-defaults
