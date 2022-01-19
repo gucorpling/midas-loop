@@ -248,7 +248,6 @@
           resp6 (set-head foo-state "root")
           foo-state' (tget foo-token-id)
 
-          _ (println "DOIN IT RIGHT")
           bar-state (tget bar-token-id)
           resp7 (set-deprel bar-state "root")
           bar-state' (tget bar-token-id)
@@ -294,8 +293,6 @@
 
       ;; setting deprel on deps-less token creates and sets a deps record
       (is (= 200 (:status resp7)))
-      (println (:deps foo-state'))
-      (println (:deps bar-state))
       (is (= 0 (-> bar-state :deps count)))
       (is (= 1 (-> bar-state' :deps count)))
       (is (= "root" (ddget bar-state'))))))
