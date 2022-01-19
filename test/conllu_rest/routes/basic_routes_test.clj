@@ -6,9 +6,6 @@
             [muuntaja.core :as m]
             [mount.core :as mount]))
 
-(defn parse-json [body]
-  (m/decode muuntaja-instance "application/json" body))
-
 (use-fixtures
   :once
   (fn [f]

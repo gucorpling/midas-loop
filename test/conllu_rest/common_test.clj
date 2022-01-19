@@ -1,5 +1,16 @@
 (ns conllu-rest.common-test
-  (:require [clojure.test :refer :all]))
+  (:require [clojure.test :refer :all]
+            [xtdb.api :as xt]
+            [conllu-rest.server.middleware :refer [muuntaja-instance]]
+            [muuntaja.core :as m]))
+
+(defn token-by-form [node form]
+  (ffirst (xt/q (xt/db node) {:find  '[?t]
+                              :where ['[?t :token/form ?f]
+                                      ['?f :form/value form]]})))
+
+(defn parse-json [body]
+  (m/decode muuntaja-instance "application/json" body))
 
 (def sample-string "
 # meta::id = AMALGUM_bio_cartagena

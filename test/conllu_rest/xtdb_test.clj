@@ -2,7 +2,7 @@
   "Integration tests covering "
   (:require [clojure.test :refer :all]
             [xtdb.api :as xt]
-            [conllu-rest.common-test :refer [sample-string]]
+            [conllu-rest.common-test :refer [sample-string token-by-form]]
             [conllu-rest.server.xtdb :refer []]
             [conllu-rest.conllu-parser :as parser]
             [conllu-rest.xtdb.easy :as cxe]
@@ -38,12 +38,8 @@
 (deftest sentence-splitting
   (let [parsed-data (parser/parse-conllu-string sample-string)
         _ (cxc/create-document node parsed-data)
-        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "Juan"]]}))
-        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "frequently"]]}))
+        juan-token-id (token-by-form node "Juan")
+        freq-token-id (token-by-form node "frequently")
         last-sent-id (ffirst (xt/q (xt/db node) '{:find  [?s]
                                                   :where [[?s :sentence/conllu-metadata ?cm]
                                                           [?cm :conllu-metadata/value "AMALGUM_bio_cartagena-3"]]}))
@@ -77,14 +73,8 @@
 (deftest atomic-values
   (let [parsed-data (parser/parse-conllu-string sample-string)
         _ (cxc/create-document node parsed-data)
-        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "Juan"]]}))
-        juan-token (cxe/entity node juan-token-id)
-        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "frequently"]]}))]
-
+        juan-token-id (token-by-form node "Juan")
+        juan-token (cxe/entity node juan-token-id)]
     (testing "Form is writeable"
       (let [form-id (:token/form juan-token)]
         (cxqt/put node {:form/id form-id :form/value "juan"} :form/id)
@@ -96,13 +86,8 @@
 (deftest assoc-values
   (let [parsed-data (parser/parse-conllu-string sample-string)
         _ (cxc/create-document node parsed-data)
-        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "Juan"]]}))
-        juan-token (cxe/entity node juan-token-id)
-        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "frequently"]]}))]
+        juan-token-id (token-by-form node "Juan")
+        juan-token (cxe/entity node juan-token-id)]
     (testing "Deleting assoc column works"
       (let [feats-ids (:token/feats juan-token)
             pre-count (count feats-ids)]
@@ -112,13 +97,9 @@
 (deftest dep-values
   (let [parsed-data (parser/parse-conllu-string sample-string)
         _ (cxc/create-document node parsed-data)
-        juan-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "Juan"]]}))
-        juan-token (cxe/entity node juan-token-id)
-        freq-token-id (ffirst (xt/q (xt/db node) '{:find  [?t]
-                                                   :where [[?t :token/form ?f]
-                                                           [?f :form/value "frequently"]]}))]
+        juan-token-id (token-by-form node "Juan")
+        freq-token-id (token-by-form node "frequently")
+        juan-token (cxe/entity node juan-token-id)]
     (testing "Putting head works and also updates deps"
       (let [head-id (:token/head juan-token)
             deps-id (first (:token/deps juan-token))]
