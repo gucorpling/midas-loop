@@ -131,7 +131,7 @@
      {:get {:summary    (str "Produce JSON representation of a deprel annotation")
             :parameters {:path {:id uuid?}}
             :handler    (cc/get-handler :deprel/id)}
-      :put {:summary    (str "Update a deprel annotation. Pass a JSON as body with a \"value\" key.")
+      :put {:summary    (str "Update a deprel annotation. Pass a deprel as body with a \"value\" key. null will reset the deprel")
             :parameters {:path {:id uuid?}
-                         :body {:value string?}}
+                         :body {:value any?}}
             :handler    put-deprel}}]]])
