@@ -36,12 +36,12 @@
         (bad-request "Token ID must be a valid java.util.UUID")))))
 
 (defn create-assoc [id-keyword]
-  (fn delete [{:keys [body-params node] :as req}]
+  (fn create [{:keys [body-params node] :as req}]
     (let [{:keys [key value token-id]} body-params]
       (if-let [token-id (common/parse-uuid token-id)]
         (let [{:keys [status msg]} (cxqt/create-assoc node token-id id-keyword key value)]
           (if (= status :ok)
-            (ok)
+            (ok msg)
             (bad-request msg)))
         (bad-request "Token ID must be a valid java.util.UUID")))))
 
@@ -96,9 +96,11 @@
 (defn associative-routes [colname]
   (let [id-keyword (keyword colname "id")]
     [(str "/" colname)
-     {:post {:summary    (str "Create a new " colname " annotation. Pass a JSON body with \"key\" and \"value\".")
-             :parameters {:body {:key string? :value string?}}
-             :handler    (create-assoc id-keyword)}}
+     [""
+      {:post {:summary    (str "Create a new " colname " annotation.")
+              :parameters {:body {:key string? :value string? :token-id uuid?}}
+              :handler    (create-assoc id-keyword)}}]
+
      ["/id/:id"
       {:get    {:summary    (str "Produce JSON representation of " (ia colname) " " colname " annotation")
                 :parameters {:path {:id uuid?}}

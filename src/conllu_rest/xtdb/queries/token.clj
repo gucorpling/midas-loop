@@ -69,7 +69,7 @@
                   add-join-tx (cxq/link-in-to-many** node id token-id (keyword "token" colname))
                   final-tx (reduce into [base-tx add-join-tx])]
               (if (cxe/submit-tx-sync node final-tx)
-                (write-ok)
+                (write-ok {:id id})
                 (write-error "Creation failed")))))))
 
 (defn get-head-deps-tx [node head-id old-val new-val]
