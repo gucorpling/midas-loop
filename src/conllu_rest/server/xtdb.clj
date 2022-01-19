@@ -7,6 +7,7 @@
             [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [conllu-rest.xtdb.queries :as queries])
+  (:refer-clojure :exclude [ident?])
   (:import [xtdb.api IXtdb]))
 
 ;; NLP listening

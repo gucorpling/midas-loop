@@ -17,6 +17,7 @@
             [conllu-rest.server.repl]
             [conllu-rest.server.tokens :as tok]
             [conllu-rest.xtdb.easy :as cxe])
+  (:refer-clojure :exclude [import])
   (:gen-class))
 
 ;; log uncaught exceptions in threads
