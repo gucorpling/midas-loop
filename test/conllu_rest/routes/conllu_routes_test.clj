@@ -1,29 +1,26 @@
-(ns conllu-rest.routes.basic-routes-test
+(ns conllu-rest.routes.conllu-routes-test
   (:require [clojure.test :refer :all]
             [ring.mock.request :refer :all]
             [conllu-rest.server.handler :refer :all]
-            [conllu-rest.server.middleware :refer [muuntaja-instance]]
+            [conllu-rest.server.middleware]
             [muuntaja.core :as m]
-            [mount.core :as mount]))
+            [mount.core :as mount]
+            [xtdb.api :as xt]))
 
-(defn parse-json [body]
-  (m/decode muuntaja-instance "application/json" body))
+(def ^:dynamic handler nil)
 
 (use-fixtures
   :once
   (fn [f]
+    (def handler (app (xt/start-node {}) (xt/start-node {})))
     (mount/start #'conllu-rest.server.config/env
                  #'conllu-rest.server.handler/app-routes)
     (f)))
 
 (deftest test-app
   (testing "main route"
-    (let [response ((app nil nil) (request :get "/api/swagger.json"))]
+    (let [response (handler (request :get "/api/swagger.json"))]
       (is (= 200 (:status response)))))
-
-  (testing "not-found route"
-    (let [response ((app nil nil) (request :get "/invalid"))]
-      (is (= 404 (:status response)))))
 
   #_(testing "services"
       (testing "success"
