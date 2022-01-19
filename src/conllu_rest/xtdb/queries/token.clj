@@ -117,10 +117,6 @@
             :else
             (let [tx [(cxe/put* (merge deprel-record {:deprel/id id :deprel/value value}))]
                   deps-tx (get-deprel-deps-tx node token-id head-id (:deprel/value deprel-record) value)]
-              (println)
-              (println tx)
-              (println deps-tx)
-              (println)
 
               (if (cxe/submit-tx-sync node (reduce into [tx deps-tx]))
                 (write-ok)
