@@ -13,6 +13,7 @@
             [conllu-rest.xtdb.creation :refer [ingest-conllu-files]]
             [conllu-rest.xtdb.serialization :refer [serialize-document]]
             [conllu-rest.server.http]
+            [conllu-rest.server.nlp]
             [conllu-rest.server.repl]
             [conllu-rest.server.tokens :as tok]
             [conllu-rest.xtdb.easy :as cxe])

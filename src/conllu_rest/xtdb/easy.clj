@@ -120,7 +120,7 @@
    (install-deftx-fns
      node
      (->> (all-ns)
-          (filter #(clojure.string/starts-with? (str %) "glam.xtdb"))
+          (filter #(clojure.string/starts-with? (str %) "conllu-rest."))
           (filter #(not (clojure.string/ends-with? (str %) "-test"))))))
   ([node namespaces]
    (doseq [ns-symbol namespaces]
