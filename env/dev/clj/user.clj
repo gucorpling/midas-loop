@@ -1,7 +1,8 @@
 (ns user
   "Userspace functions you can run by default in your local REPL."
   (:require [clojure.tools.namespace.repl :as tools-ns]
-            [conllu-rest.server.config :refer [env]]
+            [conllu-rest.server.config :as config]
+            [conllu-rest.server.xtdb :as xtdb]
             [conllu-rest.server.repl]
             [clojure.pprint]
             [clojure.spec.alpha :as s]
@@ -21,8 +22,9 @@
   "Starts application.
   You'll usually want to run this on startup."
   []
-  (def node #'conllu-rest.server.xtdb/xtdb-node)
-  (mount/start-without #'conllu-rest.server.repl/repl-server))
+  (let [result (mount/start-without #'conllu-rest.server.repl/repl-server)]
+    (def node xtdb/xtdb-node)
+    result))
 
 (defn stop
   "Stops application."
