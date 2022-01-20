@@ -16,15 +16,15 @@
 ;;   3. Queue a re-process with the NLP agent
 (defn job-id [anno-type] (keyword (name anno-type) "jobs"))
 (cxe/deftx submit-job [node anno-type sentence-id]
-           (let [{:keys [sentences] :as current} (or (cxe/entity node (job-id anno-type))
-                                                     {:xt/id (job-id anno-type) :sentences #{}})
-                 new (assoc current :sentences (conj sentences sentence-id))]
-             [(cxe/put* new)]))
+  (let [{:keys [sentences] :as current} (or (cxe/entity node (job-id anno-type))
+                                            {:xt/id (job-id anno-type) :sentences #{}})
+        new (assoc current :sentences (conj sentences sentence-id))]
+    [(cxe/put* new)]))
 
 (cxe/deftx complete-job [node anno-type sentence-id]
-           (let [{:keys [sentences] :as current} (cxe/entity node (job-id anno-type))
-                 new (assoc current :sentences (disj sentences sentence-id))]
-             [(cxe/put* new)]))
+  (let [{:keys [sentences] :as current} (cxe/entity node (job-id anno-type))
+        new (assoc current :sentences (disj sentences sentence-id))]
+    [(cxe/put* new)]))
 
 (defn get-sentence-ids-to-process [node anno-type]
   (:sentences (cxe/entity node (job-id anno-type))))

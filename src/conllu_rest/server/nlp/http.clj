@@ -1,14 +1,45 @@
 (ns conllu-rest.server.nlp.http
   (:require [clj-http.client :as client]
             [clojure.tools.logging :as log]
+            [cheshire.core :as json]
             [conllu-rest.xtdb.serialization :as serialization]
             [conllu-rest.xtdb.easy :as cxe]
-            [conllu-rest.server.nlp.common :refer [SentenceLevelProbDistProvider complete-job get-sentence-ids-to-process]]))
+            [conllu-rest.server.nlp.common :refer [SentenceLevelProbDistProvider complete-job get-sentence-ids-to-process]]
+            [conllu-rest.xtdb.queries :as cxq]
+            [xtdb.api :as xt]))
+
+(defn parse-response [data sentence-id token-count]
+  (when-let [parsed (try (json/parse-string data)
+                         (catch Exception e
+                           (log/error "NLP service responded with malformed JSON:" e)))]
+    (let [token-probas (parsed "probabilities")]
+      (cond (nil? token-probas)
+            (log/error "The JSON response must have a top-level \"probabilities\" key.")
+
+            (not= token-count (count token-probas) token-count)
+            (log/error "Expected" token-count "probas for" sentence-id "but found" (count token-probas)
+                       ". Make sure that you are yielding probas for normal tokens and ellipsis tokens, but not supertokens.")
+
+            (not (every? (fn [probas] (every? #(and (= (count %) 2) (string? (first %)) (number? (second %))) probas))
+                         token-probas))
+            (log/error "\"probabilities\" key must be a list of list of lists: for each token, there should be"
+                       "a list of pairs where each pair has a label and its probability")
+
+            :else
+            parsed))))
+
+(defn validate [{:sentence/keys [tokens id] :as sentence} data]
+  (if (nil? sentence)
+    {:status :dne}
+    (let [tokens (filterv #(not= :super (:token/token-type %)) tokens)]
+      (if-let [parsed-data (parse-response data id (count tokens))]
+        {:status :ok :data parsed-data}
+        {:status :bad-data}))))
 
 (def ^:dynamic *retry-wait-period* 10000)
 (defn get-probas
   "Attempt to contact an NLP service, defensively dealing with request failures and bad data"
-  [node url sentence-id]
+  [node url anno-type sentence-id]
   (letfn [(retry [ex try-count http-context]
             (log/info "Attempt to contact" url "failed, retrying...")
             (Thread/sleep *retry-wait-period*)
@@ -16,9 +47,11 @@
     (loop []
       (let [{:keys [status body]}
             (try
-              (client/post url {:body          (.toString (serialization/serialize-sentence node sentence-id))
-                                :content-type  "text/plain; charset=utf-8"
-                                :retry-handler retry})
+              ;; Parse the body manually later
+              (binding [client/*current-middleware* (filterv #(not= % client/wrap-output-coercion) client/default-middleware)]
+                (client/post url {:body          (.toString (serialization/serialize-sentence node sentence-id))
+                                  :content-type  "text/plain; charset=utf-8"
+                                  :retry-handler retry}))
               (catch Exception e
                 (do
                   (log/error "Exception thrown while attempting to contact NLP service:" e)
@@ -35,9 +68,26 @@
                 (recur))
 
               :else
-              (log/info body)
+              (let [{:sentence/keys [tokens] :as sentence} (cxq/pull2 node :sentence/id sentence-id)
+                    {:keys [status data]} (validate sentence body)]
+                (case status
+                  :dne
+                  (do (log/info "Sentence" sentence-id "doesn't exist! Considering job complete.")
+                      nil)
+                  :bad-data
+                  (do
+                    (Thread/sleep *retry-wait-period*)
+                    (log/info "Retrying...")
+                    (recur))
+                  (let [pairs (partition 2 (interleave tokens (data "probabilities")))
+                        tx (mapv (fn [[token probas]]
+                                   (let [probas (sort-by #(- (second %)) probas)]
+                                     ))
+                                 pairs)]
+                    ;; TODO make a tx to put the tokens
+                    #_(xt/await-tx node (xt/submit-tx node tx))))
 
-              )))))
+                ))))))
 
 (defrecord HttpProbDistProvider [config]
   SentenceLevelProbDistProvider
@@ -46,11 +96,10 @@
     (let [{:keys [url anno-type]} config]
       (if-let [sentence (cxe/entity node sentence-id)]
         (let [start (System/currentTimeMillis)
-              resp (get-probas node url sentence-id)
+              _ (get-probas node url anno-type sentence-id)
               end (System/currentTimeMillis)
               _ (complete-job node anno-type sentence-id)
               remaining (count (get-sentence-ids-to-process node anno-type))]
-          (println resp)
           (log/info (str "Completed " anno-type " job. " remaining " remaining."
                          " Est. time remaining: " (format "%.2f" (/ (* remaining (- end start)) 1000.)) " seconds."))
           this)

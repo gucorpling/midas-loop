@@ -58,6 +58,8 @@
   (when (xt/entity (xt/db node) (:xt/id m))
     (xt/pull (xt/db node) (get-pull-fragment (get-typed-id m)) (:xt/id m))))
 
+(defn pull2 [node id-keyword id] (pull node {id-keyword id :xt/id id}))
+
 ;; sentence id lookup --------------------------------------------------------------------------------
 (defn- keys-in
   "Returns a sequence of all key paths in a given map using DFS walk.
