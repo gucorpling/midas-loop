@@ -1,6 +1,5 @@
 (ns conllu-rest.xtdb.serialization
-  (:require [conllu-rest.server.xtdb :refer [xtdb-node]]
-            [xtdb.api :as xt]
+  (:require [xtdb.api :as xt]
             [conllu-rest.xtdb.easy :as cxe]))
 
 (defn serialize-atomic

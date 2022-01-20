@@ -60,16 +60,19 @@
     (when (seq sentence-ids)
       (log/info "Processed transaction. Affected sentence ids: " sentence-ids))
     (doseq [[anno-type agent] nlp/agent-map]
-      (doseq [sentence-id sentence-ids]
-        (log/info "Notifying agent" (get-in agent [:config :anno-type]) "of change to" sentence-id)
-        (nlp/submit-job node anno-type sentence-id)
-        (send-off agent nlp/predict-prob-dists node sentence-id)))))
+      (let [already-queued (nlp/get-sentence-ids-to-process node anno-type)]
+        (doseq [sentence-id sentence-ids]
+          (when-not (already-queued sentence-id)
+            (log/info "Notifying agent" (get-in @agent [:config :anno-type]) "of change to" sentence-id)
+            (nlp/submit-job node anno-type sentence-id)
+            (send-off agent nlp/predict-prob-dists node sentence-id)))))))
 
 (defn assign-jobs [node agent-map]
   (doseq [[anno-type agent] agent-map]
     (let [sentence-ids (nlp/get-sentence-ids-to-process node anno-type)]
       (when sentence-ids
-        (log/info "Found " (count sentence-ids) " incomplete jobs for " anno-type ".")
+        (log/info "Found " (count sentence-ids) " incomplete jobs for" anno-type ".")
+        (Thread/sleep 2000)
         (doseq [sentence-id sentence-ids]
           (send-off agent nlp/predict-prob-dists node sentence-id))))))
 

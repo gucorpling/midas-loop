@@ -3,11 +3,10 @@
             [clojure.spec.alpha :as s]
             [clojure.java.io :as io]
             [conllu-rest.server.config :refer [env]]
-            [conllu-rest.xtdb.queries :as queries]
+            [conllu-rest.xtdb.serialization :as serialization]
             [clojure.tools.logging :as log]
             [mount.core :as mount]
-            [conllu-rest.xtdb.easy :as cxe]
-            [xtdb.api :as xt]))
+            [conllu-rest.xtdb.easy :as cxe]))
 
 ;; some inspo: https://stackoverflow.com/questions/14673108/asynchronous-job-queue-for-web-service-in-clojure
 ;; Gameplan here.
@@ -42,17 +41,33 @@
   in the sentence."
   (predict-prob-dists [this node sentence]))
 
+(defn- retry [url ex try-count http-context]
+  (log/info "Attempt to contact" url "failed, retrying...")
+  (Thread/sleep 10000)
+  true)
+
 (defrecord HttpProbDistProvider [config]
   SentenceLevelProbDistProvider
   (predict-prob-dists [this node sentence-id]
-    (let [{:keys [url anno-type]} config
-          resp (client/post url {:data {:mars "bar"}})]
-
-      ;; TODO: the work!
-      (println resp)
-
-      (complete-job node anno-type sentence-id)
-      this)))
+    (let [{:keys [url anno-type]} config]
+      (if-let [sentence (cxe/entity node sentence-id)]
+        ;; TODO: the work!
+        (let [start (System/currentTimeMillis)
+              resp (client/post url {:body          (.toString (serialization/serialize-sentence node sentence-id))
+                                     :content-type  "text/plain; charset=utf-8"
+                                     :retry-handler (partial retry url)})
+              end (System/currentTimeMillis)
+              _ (complete-job node anno-type sentence-id)
+              remaining (count (get-sentence-ids-to-process node anno-type))]
+          (println resp)
+          (log/info (str "Completed " anno-type " job. " remaining " remaining."
+                         " Est. time remaining: " (format "%.2f" (/ (* remaining (- end start)) 1000.)) " seconds."))
+          this)
+        (do
+          (log/info (str "Sentence " sentence-id " appears to have been deleted before it was able to be processed."
+                         " Marking as completed."))
+          (complete-job node anno-type sentence-id)
+          this)))))
 
 ;; Configs
 (defn- valid-url? [s]
@@ -69,32 +84,31 @@
 (s/def ::config (s/and (s/keys :req-un [::type]) (s/or :http ::http-config)))
 
 (defn parse-configs [service-configs]
-  (doall (reduce (fn [cmap {:keys [anno-type url] :as config}]
-                   (cond (not (s/valid? ::config config))
-                         (do (log/error (str "Invalid config: " config ". Ignoring and continuing on. Error message:\n"
-                                             (s/explain-str ::config config)))
-                             cmap)
+  (doall
+    (reduce
+      (fn [cmap {:keys [anno-type url] :as config}]
+        (cond (not (s/valid? ::config config))
+              (do (log/error (str "Invalid config: " config ". Ignoring and continuing on. Error message:\n"
+                                  (s/explain-str ::config config)))
+                  cmap)
 
-                         :else
-                         (if (anno-type cmap)
-                           (do (log/error (str "There is already a config for :anno-type " anno-type ", but found another: "
-                                               config ". Keeping the existing config and ignoring this one."))
-                               cmap)
-                           (assoc cmap anno-type config))))
-                 {}
-                 service-configs)))
+              :else
+              (if (anno-type cmap)
+                (do (log/error (str "There is already a config for :anno-type " anno-type ", but found another: "
+                                    config ". Keeping the existing config and ignoring this one."))
+                    cmap)
+                (assoc cmap anno-type config))))
+      {}
+      service-configs)))
 
 (defn create-agent-map [service-configs]
   (into {} (mapv (fn [[_ {:keys [anno-type url] :as config}]]
-                   (let [;;dir (-> env :conllu-rest.server.xtdb/config :main-db-dir)
-                         ;;filepath (.getAbsolutePath (io/file dir (str (name anno-type) ".duragent")))
-                         agent (agent (->HttpProbDistProvider config))
-                         #_(duragent :local-file :file-path filepath :init (->HttpProbDistProvider config))]
+                   (let [agent (agent (->HttpProbDistProvider config) :error-handler (fn [this ex] (log/error ex)))]
                      [anno-type agent]))
                  service-configs)))
 
 (mount/defstate agent-map
   :start
   (->> (:nlp-services env)
-      parse-configs
-      create-agent-map))
+       parse-configs
+       create-agent-map))
