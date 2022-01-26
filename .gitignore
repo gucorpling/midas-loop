@@ -18,4 +18,8 @@ profiles.clj
 /node_modules
 /log
 /xtdb_data
-/xtdb_session_data
+/xtdb_token_data
+/resources/public
+/*.log
+/amalgum/
+/full_data
