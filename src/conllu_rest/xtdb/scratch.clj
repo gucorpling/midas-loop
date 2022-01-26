@@ -4,7 +4,9 @@
             [conllu-rest.xtdb.serialization :as cxs]
             [conllu-rest.xtdb.creation :as cxc]
             [conllu-rest.xtdb.queries :as cxq]
-            [conllu-rest.server.tokens :as tok]))
+            [conllu-rest.xtdb.queries.diff :as cxqd]
+            [conllu-rest.server.tokens :as tok]
+            [editscript.core :as e]))
 
 
 (def data "
@@ -31,9 +33,32 @@
 3	Cartagena	Cartagena	PROPN	NNP	Number=Sing	1	flat	1:flat	Entity=person-1)
 ")
 
+(def data2 "
+# meta::id = AMALGUM_bio_cartagena
+# meta::title = Juan de Cartagena
+# meta::shortTitle = cartagena
+# meta::type = bio
+# meta::dateCollected = 2019-11-05
+# meta::dateCreated = 2012-11-03
+# meta::dateModified = 2019-10-01
+# meta::sourceURL = https://en.wikipedia.org/wiki/Juan_de_Cartagena
+# meta::speakerList = none
+# meta::speakerCount = 0
+# newdoc id = AMALGUM_bio_cartagena
+# sent_id = AMALGUM_bio_cartagena-1
+# s_type = frag
+# text = Juan de Cartagena
+# newpar = head (1 s)
+1-2	Juan	Juan	_	_	_	_	_	_	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
+2	de	de	PROPN	NNP	Number=Sing	1	flat	1:flat	_
+2.1	foo	FOo	_	_	_	_	_	_	_
+2.2	bar	bar	_	_	_	_	_	_	_
+3	Cartagena	Cartagena	PROPN	NNP	Number=Sing	1	flat	1:flat	Entity=person-1)
+")
+
 (comment
   (def node (xtdb.api/start-node {}))
-
   (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
 
   (require '[conllu-rest.server.xtdb :refer [xtdb-node]])
@@ -56,6 +81,18 @@
             :document/name
             {:document/sentences [:sentence/id]}]
            #uuid "b066f4d4-cce5-4f04-93f9-702ae5912bc5")
+
+  )
+
+(comment
+
+  (def node (xtdb.api/start-node {}))
+  (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
+  (cxc/create-document node xs)
+  (def doc-id (:document/id (first (cxe/find-entities node [[:document/id '_]]))))
+  doc-id
+
+  (cxqd/get-diff node doc-id data data2)
 
   )
 

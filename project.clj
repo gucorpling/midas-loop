@@ -32,6 +32,7 @@
                  [selmer "1.12.44"]
                  [jumblerg/ring-cors "2.0.0"]
                  [clj-http "3.12.3"]
+                 [juji/editscript "0.5.8"]
 
                  [com.xtdb/xtdb-core "1.19.0-beta1"]
                  [com.xtdb/xtdb-lmdb "1.19.0-beta1"]
