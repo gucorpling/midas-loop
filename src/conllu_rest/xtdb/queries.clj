@@ -6,7 +6,8 @@
             [conllu-rest.common :as common]
             [xtdb.api :as xt]
             [clojure.walk :refer [postwalk]])
-  (:import (java.util UUID)))
+  (:import (java.util UUID)
+           (xtdb.api PXtdbDatasource)))
 
 ;; pulls --------------------------------------------------------------------------------
 (defn- get-typed-id [m]
@@ -54,11 +55,12 @@
 (defn pull
   "Given a node and a map like {:token/id ::id}, return a complete map of everything on that
   entity as well as everything \"under\" it."
-  [node m]
-  (when (xt/entity (xt/db node) (:xt/id m))
-    (xt/pull (xt/db node) (get-pull-fragment (get-typed-id m)) (:xt/id m))))
+  [node-or-db m]
+  (let [db (if (instance? PXtdbDatasource node-or-db) node-or-db (xt/db node-or-db))]
+    (when (xt/entity db (:xt/id m))
+      (xt/pull db (get-pull-fragment (get-typed-id m)) (:xt/id m)))))
 
-(defn pull2 [node id-keyword id] (pull node {id-keyword id :xt/id id}))
+(defn pull2 [node-or-db id-keyword id] (pull node-or-db {id-keyword id :xt/id id}))
 
 ;; sentence id lookup --------------------------------------------------------------------------------
 (defn- keys-in
