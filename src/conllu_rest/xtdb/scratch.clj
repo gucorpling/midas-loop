@@ -26,7 +26,7 @@
 # text = Juan de Cartagena
 # newpar = head (1 s)
 1-2	Juan	Juan	_	_	_	_	_	_	_
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
+1	Juan	Juan	PROPN	NNP	Number=Sing|Foo=Bar	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
 2	de	de	PROPN	NNP	Number=Sing	1	flat	1:flat	_
 2.1	foo	foo	_	_	_	_	_	_	_
 2.2	bar	bar	_	_	_	_	_	_	_
@@ -50,7 +50,7 @@
 # text = Juan de Cartagena
 # newpar = head (1 s)
 1-2	Juan	Juan	_	_	_	_	_	_	_
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
+1	Juan	Juan	PROPN	NNP	Foo=Bar|Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
 2	de	de	PROPN	NNP	Number=Sing	1	flat	1:flat	_
 2.1	foo	FOo	_	_	_	_	_	_	_
 2.2	bar	bar	_	_	_	_	_	_	_
@@ -86,11 +86,12 @@
 
 (comment
 
-  (def node (xtdb.api/start-node {}))
-  (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
-  (cxc/create-document node xs)
-  (def doc-id (:document/id (first (cxe/find-entities node [[:document/id '_]]))))
-  doc-id
+  (do
+    (def node (xtdb.api/start-node {}))
+    (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
+    (cxc/create-document node xs)
+    (def doc-id (:document/id (first (cxe/find-entities node [[:document/id '_]]))))
+    doc-id)
 
   (cxqd/get-diff node doc-id data data2)
 
