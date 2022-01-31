@@ -31,11 +31,21 @@
   (let [v (string/trim v)
         groups (or (get-groups super-token-re v)
                    (get-groups empty-token-re v))]
-    (cond (some? groups) groups
-          (= v "_") nil
-          :else (Long/parseLong v))))
+    (cond (some? groups)
+          groups
 
-(defn parse-atomic [v] (if (= v "_") nil v))
+          (= v "_")
+          nil
+          :else
+          (try
+            (Long/parseLong v)
+            (catch Exception e
+              (throw (ex-info "Tried to parse plain ID but failed!" {:id v} e)))))))
+
+(defn parse-atomic
+  "Parse an atomic cell. CoNLL-U typically uses `_` to express nil, but also accept the empty string as nil."
+  [v]
+  (if (#{"_" ""} v) nil v))
 
 (defn parse-assoc
   ([v] (parse-assoc "=" v))
@@ -58,6 +68,7 @@
                                                                                  :cols   cols})))
     {:id     (parse-id (get cols 0))
      :form   (get cols 1)
+     ;; Treat _ in the lemma column as a literal lemma instead of nil.
      :lemma  (get cols 2)
      :upos   (parse-atomic (get cols 3))
      :xpos   (parse-atomic (get cols 4))
@@ -71,11 +82,18 @@
   (let [lines (string/split-lines lines)
         metadata-lines (filter metadata-line? lines)
         token-lines (filter #(not (metadata-line? %)) lines)]
-    {:metadata (into [] (map parse-metadata-line metadata-lines))
+    {:metadata (into [] (remove nil? (map parse-metadata-line metadata-lines)))
      :tokens   (into [] (map parse-token-line token-lines))}))
 
-(defn parse-conllu-string [conllu-string]
-  (map parse-sentence-lines (string/split (string/trim conllu-string) #"\n\n")))
+(defn parse-conllu-string
+  "Parse and return Clojure data structures representing a conllu string. Throws an exception
+  if a syntax error is encountered, such as a non-comment row that does not have exactly 10 columns.
+  Some rules:
+  - Lines that begin with `#` but don't contain a `=` will be silently ignored.
+  - If a line does not begin with a `#`, an exception will be thrown unless it has exactly 10 columns.
+  - NO validation is conducted on any values, e.g. to ensure that IDs are sequential or that heads exist."
+  [conllu-string]
+  (mapv parse-sentence-lines (string/split (string/trim conllu-string) #"\n\n")))
 
 (comment
 
@@ -95,6 +113,8 @@
 ")
 
   (def xs (parse-conllu-string data))
+
+  xs
 
   (first (:tokens (first xs)))
 
