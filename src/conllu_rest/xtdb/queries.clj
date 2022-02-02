@@ -62,6 +62,9 @@
 
 (defn pull2 [node-or-db id-keyword id] (pull node-or-db {id-keyword id :xt/id id}))
 
+(defn subtree->ident [tree-fragment]
+  (first (filter #(= "id" (-> % first name)) tree-fragment)))
+
 ;; sentence id lookup --------------------------------------------------------------------------------
 (defn- keys-in
   "Returns a sequence of all key paths in a given map using DFS walk.

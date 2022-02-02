@@ -6,55 +6,18 @@
             [conllu-rest.xtdb.queries :as cxq]
             [conllu-rest.xtdb.queries.diff :as cxqd]
             [conllu-rest.server.tokens :as tok]
-            [editscript.core :as e]))
+            [editscript.core :as e])
+  (:import [java.util UUID]))
 
 
 (def data "
-# meta::id = AMALGUM_bio_cartagena
-# meta::title = Juan de Cartagena
-# meta::shortTitle = cartagena
-# meta::type = bio
-# meta::dateCollected = 2019-11-05
-# meta::dateCreated = 2012-11-03
-# meta::dateModified = 2019-10-01
-# meta::sourceURL = https://en.wikipedia.org/wiki/Juan_de_Cartagena
-# meta::speakerList = none
-# meta::speakerCount = 0
 # newdoc id = AMALGUM_bio_cartagena
-# sent_id = AMALGUM_bio_cartagena-1
-# s_type = frag
-# text = Juan de Cartagena
-# newpar = head (1 s)
-1-2	Juan	Juan	_	_	_	_	_	_	_
-1	Juan	Juan	PROPN	NNP	Number=Sing|Foo=Bar	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
-2	de	de	PROPN	NNP	Number=Sing	1	flat	1:flat	_
-2.1	foo	foo	_	_	_	_	_	_	_
-2.2	bar	bar	_	_	_	_	_	_	_
-3	Cartagena	Cartagena	PROPN	NNP	Number=Sing	1	flat	1:flat	Entity=person-1)
+1	Juan	juano	PROPN	NNP	Glar=Zar|Number=Sing|Foo=Bar	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
 ")
 
 (def data2 "
-# meta::id = AMALGUM_bio_cartagena
-# meta::title = Juan de Cartagena
-# meta::shortTitle = cartagena
-# meta::type = bio
-# meta::dateCollected = 2019-11-05
-# meta::dateCreated = 2012-11-03
-# meta::dateModified = 2019-10-01
-# meta::sourceURL = https://en.wikipedia.org/wiki/Juan_de_Cartagena
-# meta::speakerList = none
-# meta::speakerCount = 0
 # newdoc id = AMALGUM_bio_cartagena
-# sent_id = AMALGUM_bio_cartagena-1
-# s_type = frag
-# text = Juan de Cartagena
-# newpar = head (1 s)
-1-2	Juan	Juan	_	_	_	_	_	_	_
-1	Juan	Juan	PROPN	NNP	Foo=Bar|Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
-2	de	de	PROPN	NNP	Number=Sing	1	flat	1:flat	_
-2.1	foo	FOo	_	_	_	_	_	_	_
-2.2	bar	bar	_	_	_	_	_	_	_
-3	Cartagena	Cartagena	PROPN	NNP	Number=Sing	1	flat	1:flat	Entity=person-1)
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
 ")
 
 (comment
@@ -85,15 +48,54 @@
   )
 
 (comment
-
   (do
     (def node (xtdb.api/start-node {}))
-    (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
+    (cxe/install-tx-fns! node)
+    (def xs (conllu-rest.conllu-parser/parse-conllu-string data2))
     (cxc/create-document node xs)
     (def doc-id (:document/id (first (cxe/find-entities node [[:document/id '_]]))))
     doc-id)
 
-  (cxqd/get-diff node doc-id data data2)
+  (cxs/serialize-document node doc-id)
+
+  (cxqd/apply-annotation-diff node doc-id data2 data)
+
+  (cxe/find-entities node [[:sentence/id '_]])
+  (cxe/entity node #uuid"cda2bf47-7244-4d62-ad23-d69707ca8ce5")
+
+  (cxq/pull2 node :token/id #uuid"cda2bf47-7244-4d62-ad23-d69707ca8ce5")
+
+  (let [doc-tree (cxq/pull2 node :document/id doc-id)
+        current-conllu (cxs/serialize-document node doc-id)
+        old-parsed (cxqd/try-parse data2)
+        new-parsed (cxqd/try-parse data)
+        diff (cxqd/get-diff old-parsed new-parsed)
+        _ (println diff)
+        tx (cxqd/diff->tx node doc-tree diff)]
+
+    tx
+    )
+
+  ((fn [node document-id old-conllu new-conllu]
+     (let [doc-tree (cxq/pull2 node :document/id document-id)
+           current-conllu (cxs/serialize-document node document-id)
+           old-parsed (cxqd/try-parse old-conllu)
+           new-parsed (cxqd/try-parse new-conllu)]
+       (cond (not= (clojure.string/trim current-conllu) (clojure.string/trim old-conllu))
+             (throw (ex-info "Old CoNLL-U string does not match current." {:submitted old-conllu :actual current-conllu}))
+
+             (instance? Exception old-parsed)
+             (throw old-parsed)
+
+             (instance? Exception new-parsed)
+             (throw new-parsed)
+
+             :else
+             (let [diff (cxqd/get-diff node old-parsed new-parsed)]
+               (if (cxqd/valid-annotation-diff? diff)
+                 (cxqd/diff->tx node doc-tree diff)
+                 (throw (ex-info "Invalid annotation diff" {:diff diff})))))))
+   node doc-id data data2)
 
   )
 
