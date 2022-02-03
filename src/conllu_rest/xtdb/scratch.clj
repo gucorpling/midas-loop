@@ -20,9 +20,22 @@
 1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	Discourse=preparation:1->6|Entity=(person-1
 ")
 
+(def minimal
+"
+# newdoc id = AMALGUM_bio_cartagena
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+")
+
+(def minimal-assoc-replace
+"
+# newdoc id = AMALGUM_bio_cartagena
+1	Juan	Juan	PROPN	NNP	Frog=Bog	0	root	0:root	_
+")
+
 (comment
   (def node (xtdb.api/start-node {}))
   (def xs (conllu-rest.conllu-parser/parse-conllu-string data))
+  xs
 
   (require '[conllu-rest.server.xtdb :refer [xtdb-node]])
 
@@ -51,14 +64,14 @@
   (do
     (def node (xtdb.api/start-node {}))
     (cxe/install-tx-fns! node)
-    (def xs (conllu-rest.conllu-parser/parse-conllu-string data2))
+    (def xs (conllu-rest.conllu-parser/parse-conllu-string minimal))
     (cxc/create-document node xs)
     (def doc-id (:document/id (first (cxe/find-entities node [[:document/id '_]]))))
     doc-id)
 
   (cxs/serialize-document node doc-id)
 
-  (cxqd/apply-annotation-diff node doc-id data2 data)
+  (cxqd/apply-annotation-diff node doc-id minimal minimal-assoc-replace)
 
   (cxe/find-entities node [[:sentence/id '_]])
   (cxe/entity node #uuid"cda2bf47-7244-4d62-ad23-d69707ca8ce5")

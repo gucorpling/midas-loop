@@ -36,7 +36,6 @@
 (defn insert-into-vector
   "Insert an item `n` into a position `i` in a vector `v`"
   [v i n]
-  (println v i n)
   (into (conj (subvec v 0 i) n)
         (subvec v i)))
 
@@ -86,7 +85,6 @@
         ;; try to read from latest tx first
         parent-entity (or (txs->entity txs token-id) (cxe/entity node token-id))
         ;; get the id kwd from the fragment but
-        _ (println "!!" parent-entity)
         [child-id-keyword _] (cxq/subtree->ident val)
         child-entity (cxe/create-record (namespace child-id-keyword) (dissoc val child-id-keyword))
         new-parent-entity (update parent-entity join-key insert-into-vector (last path) (child-id-keyword child-entity))]
@@ -112,11 +110,18 @@
   ;; For something like:
   ;; [[:document/sentences 0 :sentence/tokens 3 :token/lemma :lemma/value] :r "foo"]
   ;; [[:document/sentences 0 :sentence/tokens 3 :token/feats 0 :feats/key] :r "foo"]
-  (let [child (follow-path doc-tree (butlast path))
-        [_ child-id] (cxq/subtree->ident child)
-        child-entity (cxe/entity node child-id)
-        new-child-entity (assoc child-entity (last path) val)]
-    [(cxe/put* new-child-entity)]))
+  ;; [[:document/sentences 0 :sentence/tokens 3 :token/feats 0] :r {:feats/id ... :Feats/key ... :feats/value ...}]
+  (if (keyword? (last path))
+    (let [child (follow-path doc-tree (butlast path))
+          [_ child-id] (cxq/subtree->ident child)
+          child-entity (cxe/entity node child-id)
+          new-child-entity (assoc child-entity (last path) val)]
+      [(cxe/put* new-child-entity)])
+    (let [child (follow-path doc-tree path)
+          [_ child-id] (cxq/subtree->ident child)
+          child-entity (cxe/entity node child-id)
+          new-child-entity (merge child-entity (into {} (remove #(= "id" (some-> % first name)) val)))]
+      [(cxe/put* new-child-entity)])))
 
 (defn diff->tx [node doc-tree diff]
   "Given a diff produced by get-diff against a document, transduce the sequence into
@@ -148,7 +153,7 @@
                      (= "token" (namespace elt-2nd-last))
                      (keyword? elt-last))
 
-                ;; Deletion or addition of an associative col -- a :+ or :- op
+                ;; Deletion or addition or replacement of an associative col -- a :+ or :- or :r op
                 (and (keyword? elt-2nd-last)
                      (= "token" (namespace elt-2nd-last))
                      (integer? elt-last))
