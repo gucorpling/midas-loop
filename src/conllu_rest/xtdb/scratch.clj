@@ -1,12 +1,14 @@
 (ns conllu-rest.xtdb.scratch
   (:require [xtdb.api :as xt]
+            [clojure.walk :as walk]
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.xtdb.serialization :as cxs]
             [conllu-rest.xtdb.creation :as cxc]
             [conllu-rest.xtdb.queries :as cxq]
             [conllu-rest.xtdb.queries.diff :as cxqd]
             [conllu-rest.server.tokens :as tok]
-            [editscript.core :as e])
+            [editscript.core :as e]
+            [conllu-rest.conllu-parser :as cp])
   (:import [java.util UUID]))
 
 
@@ -23,14 +25,38 @@
 (def minimal
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	foo	0:foo	_
+2	de	de	ADP	IN	_	1	nmod	1:nmod	_
+3	de	de	ADP	IN	_	2	nmod	2:nmod	_
 ")
 
-(def minimal-assoc-replace
+(def minimal2
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Frog=Bog	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	foo	0:foo	_
+2	de	de	ADP	IN	_	3	nmod	3:nmod	_
+3	de	de	ADP	IN	_	2	nmod	2:nmod	_
 ")
+
+
+(def two-sentence-minimal
+"
+# newdoc id = AMALGUM_bio_cartagena
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+
+1	de	de	PROPN	NNP	Number=Sing	0	root	0:root	_
+2	true	true	ADJ	JJ	Degree=Pos	1	amod	1:amod	_
+")
+
+(def two-sentence-minimal-head
+"
+# newdoc id = AMALGUM_bio_cartagena
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+
+1	de	de	PROPN	NNP	Number=Sing	2	amod	2:amod	_
+2	true	true	ADJ	JJ	Degree=Pos	0	root	0:root	_
+")
+
 
 (comment
   (def node (xtdb.api/start-node {}))
@@ -61,27 +87,48 @@
   )
 
 (comment
-  (do
+  (let [a two-sentence-minimal
+        b two-sentence-minimal-head]
     (def node (xtdb.api/start-node {}))
     (cxe/install-tx-fns! node)
-    (def xs (conllu-rest.conllu-parser/parse-conllu-string minimal))
+    (def xs (conllu-rest.conllu-parser/parse-conllu-string a))
     (cxc/create-document node xs)
     (def doc-id (:document/id (first (cxe/find-entities node [[:document/id '_]]))))
+    (def old-parsed (cp/parse-conllu-string a))
+    (def new-parsed (cp/parse-conllu-string b))
     doc-id)
 
-  (cxs/serialize-document node doc-id)
+  old-parsed
 
-  (cxqd/apply-annotation-diff node doc-id minimal minimal-assoc-replace)
+  new-parsed
+
+  (println (cxs/serialize-document node doc-id))
+
+  (cxqd/apply-annotation-diff node doc-id two-sentence-minimal two-sentence-minimal-head)
+
+  (cxqd/get-diff node doc-id new-parsed)
+
+  (get-in (cxq/pull2 node :document/id doc-id) [:document/sentences 0])
+
+  (str (cxs/serialize-sentence node (:sentence/id (get-in (cxq/pull2 node :document/id doc-id) [:document/sentences 0]))))
+
 
   (cxe/find-entities node [[:sentence/id '_]])
   (cxe/entity node #uuid"cda2bf47-7244-4d62-ad23-d69707ca8ce5")
 
-  (cxq/pull2 node :token/id #uuid"cda2bf47-7244-4d62-ad23-d69707ca8ce5")
+  (let [tree (cxq/pull2 node :document/id doc-id)
+        ids (atom [])]
+    (walk/prewalk (fn [m]
+                    (when (map? m)
+                      (swap! ids conj (cxq/subtree->ident m)))
+                    m)
+                  tree)
+    @ids)
 
   (let [doc-tree (cxq/pull2 node :document/id doc-id)
         current-conllu (cxs/serialize-document node doc-id)
-        old-parsed (cxqd/try-parse data2)
-        new-parsed (cxqd/try-parse data)
+        old-parsed (cxqd/try-parse minimal)
+        new-parsed (cxqd/try-parse minimal2)
         diff (cxqd/get-diff old-parsed new-parsed)
         _ (println diff)
         tx (cxqd/diff->tx node doc-tree diff)]

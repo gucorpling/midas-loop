@@ -21,7 +21,6 @@
       (cxe/install-tx-fns! node)
       (f))))
 
-
 (defn modify [cstr ops]
   (let [node (xt/start-node {})
         parsed (parser/parse-conllu-string cstr)
@@ -45,66 +44,85 @@
 (def two-sentence-minimal
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	_	_
 
-1	de	de	PROPN	NNP	Number=Sing	0	root	0:root	_
-2	true	true	ADJ	JJ	Degree=Pos	1	amod	1:amod	_
+1	de	de	PROPN	NNP	Number=Sing	0	root	_	_
+2	true	true	ADJ	JJ	Degree=Pos	1	amod	_	_
 ")
 
 (def two-sentence-minimal-head
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	_	_
 
-1	de	de	PROPN	NNP	Number=Sing	2	amod	2:amod	_
-2	true	true	ADJ	JJ	Degree=Pos	0	root	0:root	_
+1	de	de	PROPN	NNP	Number=Sing	2	amod	_	_
+2	true	true	ADJ	JJ	Degree=Pos	0	root	_	_
 ")
 
 (def two-sentence-minimal-combined-sentences
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
-2	de	de	PROPN	NNP	Number=Sing	0	root	0:root	_
-3	true	true	ADJ	JJ	Degree=Pos	2	amod	2:amod	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	_	_
+2	de	de	PROPN	NNP	Number=Sing	0	root	_	_
+3	true	true	ADJ	JJ	Degree=Pos	2	amod	_	_
 ")
 
 (def two-sentence-minimal-combined-tokens
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	_	_
 
-1	detrue	detrue	PROPN	NNP	Number=Sing	0	root	0:root	_
+1	detrue	detrue	PROPN	NNP	Number=Sing	0	root	_	_
 ")
 
 (def minimal
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Number=Sing	0	root	_	_
 ")
 
 (def minimal-lemma-change
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	juan	PROPN	NNP	Number=Sing	0	root	0:root	_
+1	Juan	juan	PROPN	NNP	Number=Sing	0	root	_	_
 ")
 
 (def minimal-assoc-front
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Car=Far|Number=Sing	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Car=Far|Number=Sing	0	root	_	_
 ")
 
 (def minimal-assoc-replace
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	Juan	Juan	PROPN	NNP	Frog=Bog	0	root	0:root	_
+1	Juan	Juan	PROPN	NNP	Frog=Bog	0	root	_	_
 ")
 
 (def minimal-multi
 "
 # newdoc id = AMALGUM_bio_cartagena
-1	juan	juan	NOUN	CD	Number=Sing|Foo=Bar	0	root	0:root	_
+1	juan	juan	NOUN	CD	Number=Sing|Foo=Bar	0	root	_	_
 ")
+
+(def minimal-deps-del
+"
+# newdoc id = AMALGUM_bio_cartagena
+1	juan	juan	NOUN	CD	Number=Sing|Foo=Bar	0	root	_	_
+")
+
+(def minimal-deps-add
+"
+# newdoc id = AMALGUM_bio_cartagena
+1	juan	juan	NOUN	CD	Number=Sing|Foo=Bar	0	root	_	_
+")
+
+(def minimal-deps-sub
+"
+# newdoc id = AMALGUM_bio_cartagena
+1	juan	juan	NOUN	CD	Number=Sing|Foo=Bar	0	root	_	_
+")
+
 
 (def sentence
 "
@@ -112,15 +130,15 @@
 # sent_id = GUM_bio_galois-11
 # s_type = decl
 # text = The true motives behind the duel are obscure.
-1	The	the	DET	DT	Definite=Def|PronType=Art	3	det	3:det	_
-2	true	true	ADJ	JJ	Degree=Pos	3	amod	3:amod	_
-3	motives	motive	NOUN	NNS	Number=Plur	8	nsubj	8:nsubj	_
-4	behind	behind	ADP	IN	_	6	case	6:case	_
-5	the	the	DET	DT	Definite=Def|PronType=Art	6	det	6:det	_
-6	duel	duel	NOUN	NN	Number=Sing	3	nmod	3:nmod:behind	_
-7	are	be	AUX	VBP	Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin	8	cop	8:cop	_
-8	obscure	obscure	ADJ	JJ	Degree=Pos	0	root	0:root	_
-9	.	.	PUNCT	.	_	8	punct	8:punct	_
+1	The	the	DET	DT	Definite=Def|PronType=Art	3	det	_	_
+2	true	true	ADJ	JJ	Degree=Pos	3	amod	_	_
+3	motives	motive	NOUN	NNS	Number=Plur	8	nsubj	_	_
+4	behind	behind	ADP	IN	_	6	case	_	_
+5	the	the	DET	DT	Definite=Def|PronType=Art	6	det	__
+6	duel	duel	NOUN	NN	Number=Sing	3	nmod	_	_
+7	are	be	AUX	VBP	Mood=Ind|Number=Plur|Person=3|Tense=Pres|VerbForm=Fin	8	cop	_	_
+8	obscure	obscure	ADJ	JJ	Degree=Pos	0	root	_	_
+9	.	.	PUNCT	.	_	8	punct	_	_
 ")
 
 (defn same? [expected-conllu doc-id]
@@ -133,7 +151,11 @@
                                                two-sentence-minimal-combined-sentences))))
     (testing "Tokenization change results in rejection"
       (is (= false (cxqd/apply-annotation-diff node doc-id two-sentence-minimal
-                                               two-sentence-minimal-combined-tokens))))))
+                                               two-sentence-minimal-combined-tokens))))
+    (testing "Edits to deps are not allowed"
+      (is (= false (cxqd/apply-annotation-diff node doc-id minimal minimal-deps-add)))
+      (is (= false (cxqd/apply-annotation-diff node doc-id minimal minimal-deps-del)))
+      (is (= false (cxqd/apply-annotation-diff node doc-id minimal minimal-deps-sub))))))
 
 (deftest simple-annotation-diff-lemma
   (let [doc-id (setup minimal)]

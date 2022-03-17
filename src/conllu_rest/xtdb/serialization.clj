@@ -59,7 +59,9 @@
      (.append sb (serialize-atomic node token "deprel"))
      (.append sb "\t")
      ;; DEPS
-     (.append sb (serialize-assoc node token "deps" ":" #(id-map %)))
+     ;; TODO: the diff algo doesn't respect head/deps correspondence so just always blank this out
+     (.append sb "_")
+     ;;(.append sb (serialize-assoc node token "deps" ":" #(id-map %)))
      (.append sb "\t")
      ;; DEPS
      (.append sb (serialize-assoc node token "misc"))

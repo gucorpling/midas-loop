@@ -8,30 +8,56 @@
             [conllu-rest.xtdb.creation :as cxc]
             [conllu-rest.xtdb.queries :as cxq]
             [conllu-rest.server.tokens :as tok]
-            [conllu-rest.conllu-parser :as cp]))
+            [conllu-rest.conllu-parser :as cp]
+            [clojure.walk :as walk])
+  (:import (java.util ArrayList)))
 
 (defn- filter-diff
+  "Filter out all diff bits with a UUID as the value, except when it's a :head/value.
+  This will include spurious ops for heads that in fact have not changed. We will deal with
+  them later."
   [diff]
   (vec (remove (fn [[path op v]]
-                 (uuid? v)
+                 (or (and (uuid? v)
+                          (not= (last path) :head/value)))
                  #_(and (keyword? (-> path last))
                         (= (-> path last name) "id")
                         (= op :r)))
                diff)))
 
+(defn get-id-map [doc-old doc-new]
+  (letfn [(doc->ids [doc]
+            (mapcat (fn [sentence]
+                      (for [token (:sentence/tokens sentence)]
+                        (:token/id token)))
+                    (:document/sentences doc)))]
+    (let [old-ids (doc->ids doc-old)
+          new-ids (doc->ids doc-new)]
+      (when (= (count new-ids) (count old-ids))
+        (into {:root :root} (map vector new-ids old-ids))))))
+
+(defn fix-head-values [diff doc-old doc-new]
+  (let [id-map (get-id-map doc-old doc-new)]
+    (mapv (fn [[path op v :as diff-item]]
+            (if (and (= (last path) :head/value)
+                     (= op :r))
+              [path op (id-map v)]
+              diff-item))
+          diff)))
+
 (defn get-diff
   "Produce an editscript diff for a document given an old and new conllu string representing it."
-  [old-parsed new-parsed]
+  [node document-id new-parsed]
   (let [tmp-node (xt/start-node {})
-        old-tx (cxc/build-document old-parsed)
         new-tx (cxc/build-document new-parsed)
-        old-id (-> old-tx first second :document/id)
         new-id (-> new-tx first second :document/id)
-        spec-db (xt/with-tx (xt/db tmp-node) (into old-tx new-tx))
-        doc-old (cxq/pull2 spec-db :document/id old-id)
+        spec-db (xt/with-tx (xt/db tmp-node) new-tx)
+        doc-old (cxq/pull2 (xt/db node) :document/id document-id)
         doc-new (cxq/pull2 spec-db :document/id new-id)
-        diff (e/diff doc-old doc-new)]
-    (filter-diff (get-edits diff))))
+        raw-diff (e/diff doc-old doc-new)
+        filtered-diff (filter-diff (get-edits raw-diff))
+        corrected-diff (fix-head-values filtered-diff doc-old doc-new)]
+    corrected-diff))
 
 (defn insert-into-vector
   "Insert an item `n` into a position `i` in a vector `v`"
@@ -66,12 +92,12 @@
 ;; NYI
 
 ;; Annotation diffing --------------------------------------------------------------------------------------------------
-(defmulti transduce-diff-item (fn [node txs doc-tree [path op val]] op))
+(defmulti transduce-diff-item (fn [node diff txs doc-tree [path op val]] op))
 
-(defmethod transduce-diff-item :default [node txs doc-tree [path op val]]
+(defmethod transduce-diff-item :default [node diff txs doc-tree [path op val]]
   (throw (ex-info "Unknown op type!" {:op op})))
 
-(defmethod transduce-diff-item :+ [node txs doc-tree [path _ val]]
+(defmethod transduce-diff-item :+ [node diff txs doc-tree [path _ val]]
   ;; For something like:
   ;;    [[:document/sentences 0 :sentence/tokens 1 :token/feats 1]
   ;;     :+
@@ -91,7 +117,7 @@
     [(cxe/put* child-entity)
      (cxe/put* new-parent-entity)]))
 
-(defmethod transduce-diff-item :- [node txs doc-tree [path _]]
+(defmethod transduce-diff-item :- [node diff txs doc-tree [path _]]
   ;; For something like: [[:document/sentences 0 :sentence/tokens 1 :token/feats 0] :-]
   (let [token-path (vec (drop-last 2 path))
         token (follow-path doc-tree token-path)
@@ -106,11 +132,11 @@
     [(cxe/delete* child-id)
      (cxe/put* new-parent-entity)]))
 
-(defmethod transduce-diff-item :r [node txs doc-tree [path _ val]]
+(defmethod transduce-diff-item :r [node diff txs doc-tree [path _ val]]
   ;; For something like:
   ;; [[:document/sentences 0 :sentence/tokens 3 :token/lemma :lemma/value] :r "foo"]
   ;; [[:document/sentences 0 :sentence/tokens 3 :token/feats 0 :feats/key] :r "foo"]
-  ;; [[:document/sentences 0 :sentence/tokens 3 :token/feats 0] :r {:feats/id ... :Feats/key ... :feats/value ...}]
+  ;; [[:document/sentences 0 :sentence/tokens 3 :token/feats 0] :r {:feats/id ... :feats/key ... :feats/value ...}]
   (if (keyword? (last path))
     (let [child (follow-path doc-tree (butlast path))
           [_ child-id] (cxq/subtree->ident child)
@@ -134,7 +160,7 @@
       ;; We need to update the tree as we go, since editscript diffs are defined relative to the
       ;; state after each previous operation has been applied.
       (recur
-        (into txs (transduce-diff-item node txs doc-tree head-op))
+        (into txs (transduce-diff-item node diff txs doc-tree head-op))
         (e/patch tree (e/edits->script [head-op]))
         tail))))
 
@@ -147,22 +173,26 @@
 (defn valid-annotation-diff? [diff]
   (every? (fn [[path & _ :as delt]]
             (let [[elt-3rd-last elt-2nd-last elt-last] (take-last 3 path)]
-              (or
-                ;; Change to atomic col -- an :r op
-                (and (keyword? elt-2nd-last)
-                     (= "token" (namespace elt-2nd-last))
-                     (keyword? elt-last))
+              (and
+                (not (and (keyword? (last path))
+                          (or (= (namespace (last path)) "deps")
+                              (= (last path) :token/deps))))
+                (or
+                  ;; Change to atomic col -- an :r op
+                  (and (keyword? elt-2nd-last)
+                       (= "token" (namespace elt-2nd-last))
+                       (keyword? elt-last))
 
-                ;; Deletion or addition or replacement of an associative col -- a :+ or :- or :r op
-                (and (keyword? elt-2nd-last)
-                     (= "token" (namespace elt-2nd-last))
-                     (integer? elt-last))
+                  ;; Deletion or addition or replacement of an associative col -- a :+ or :- or :r op
+                  (and (keyword? elt-2nd-last)
+                       (= "token" (namespace elt-2nd-last))
+                       (integer? elt-last))
 
-                ;; Value change inside associative col -- an :r op
-                (and (keyword? elt-3rd-last)
-                     (= "token" (namespace elt-3rd-last))
-                     (integer? elt-2nd-last)
-                     (keyword? elt-last)))))
+                  ;; Value change inside associative col -- an :r op
+                  (and (keyword? elt-3rd-last)
+                       (= "token" (namespace elt-3rd-last))
+                       (integer? elt-2nd-last)
+                       (keyword? elt-last))))))
           diff))
 
 (cxe/deftx apply-annotation-diff [node document-id old-conllu new-conllu]
@@ -171,7 +201,11 @@
         old-parsed (try-parse old-conllu)
         new-parsed (try-parse new-conllu)]
     (cond (not= (clj-str/trim current-conllu) (clj-str/trim old-conllu))
-          (throw (ex-info "Old CoNLL-U string does not match current." {:submitted old-conllu :actual current-conllu}))
+          (throw (ex-info (str "Old CoNLL-U string does not match current. Current:\n"
+                               current-conllu
+                               "\n\nSubmitted:\n"
+                               old-conllu)
+                          {:submitted old-conllu :actual current-conllu}))
 
           (instance? Exception old-parsed)
           (throw old-parsed)
@@ -179,12 +213,13 @@
           (instance? Exception new-parsed)
           (throw new-parsed)
 
+          ;; TODO: would be nice to abort if we detect the new-conllu doesn't match the actual
+          ;; (this would indicate a bug in our code)
           :else
-          (let [diff (get-diff old-parsed new-parsed)]
+          (let [diff (get-diff node document-id new-parsed)]
             (if (valid-annotation-diff? diff)
               (diff->tx node doc-tree diff)
               (throw (ex-info "Invalid annotation diff" {:diff diff})))))))
-
 
 (comment
   ;; example diff:
