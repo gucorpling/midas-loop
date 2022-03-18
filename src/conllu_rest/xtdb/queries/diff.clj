@@ -195,6 +195,30 @@
                        (keyword? elt-last))))))
           diff))
 
+(defn same-sentence-lengths? [parsed1 parsed2]
+  (let [sentences-1 (map :tokens parsed1)
+        sentences-2 (map :tokens parsed2)
+        sentence-pairs (map (fn [s1 s2] [s1 s2])
+                            sentences-1
+                            sentences-2)]
+    (and (= (count sentences-1) (count sentences-2))
+         (every? (fn [[s1 s2]] (= (count s1) (count s2))) sentence-pairs))))
+
+(defn same-token-forms? [parsed1 parsed2]
+  (let [sentences-1 (map :tokens parsed1)
+        sentences-2 (map :tokens parsed2)
+        sentence-pairs (map (fn [s1 s2] [s1 s2])
+                            sentences-1
+                            sentences-2)]
+    (and (same-sentence-lengths? parsed1 parsed2)
+         (every? (fn [[s1 s2]]
+                   (let [form-pairs (map (fn [t1 t2] [(:form t1) (:form t2)])
+                                         s1 s2)]
+                     (every? (fn [[t1 t2]]
+                               (= t1 t2))
+                             form-pairs)))
+                 sentence-pairs))))
+
 (cxe/deftx apply-annotation-diff [node document-id old-conllu new-conllu]
   (let [doc-tree (cxq/pull2 node :document/id document-id)
         current-conllu (cxs/serialize-document node document-id)
@@ -212,6 +236,12 @@
 
           (instance? Exception new-parsed)
           (throw new-parsed)
+
+          (not (same-sentence-lengths? old-parsed new-parsed))
+          (throw (ex-info "Sentence and/or token counts do not match." {:old old-conllu :new new-conllu}))
+
+          ;; (not (same-token-forms? old-parsed new-parsed))
+          ;; (throw (ex-info "Token forms do not match." {:old old-conllu :new new-conllu}))
 
           ;; TODO: would be nice to abort if we detect the new-conllu doesn't match the actual
           ;; (this would indicate a bug in our code)

@@ -98,6 +98,10 @@
     (def new-parsed (cp/parse-conllu-string b))
     doc-id)
 
+  (cxqd/same-token-forms? new-parsed old-parsed)
+
+  (cxqd/same-sentence-lengths? new-parsed old-parsed)
+
   old-parsed
 
   new-parsed
@@ -157,22 +161,22 @@
                  (throw (ex-info "Invalid annotation diff" {:diff diff})))))))
    node doc-id data data2)
 
-  )
-
-
-(comment
-  ;; upload into real db
-  (doseq [genre ["bio" "fiction" "news" "academic" "interview" "voyage" "whow"]]
-    (let [path (str "amalgum/amalgum/" genre "/dep")
-          filenames (seq (.list (clojure.java.io/file path)))
-          filepaths (sort (map #(str path "/" %) filenames))]
-
-      (cxc/ingest-conllu-files xtdb-node filepaths)
-      ))
 
 
 
-  (let [files (map clojure.string/trim (clojure.string/split-lines "./amalgum/amalgum/fiction/dep/AMALGUM_fiction_twain.conllu
+  (comment
+    ;; upload into real db
+    (doseq [genre ["bio" "fiction" "news" "academic" "interview" "voyage" "whow"]]
+      (let [path (str "amalgum/amalgum/" genre "/dep")
+            filenames (seq (.list (clojure.java.io/file path)))
+            filepaths (sort (map #(str path "/" %) filenames))]
+
+        (cxc/ingest-conllu-files xtdb-node filepaths)
+        ))
+
+
+
+    (let [files (map clojure.string/trim (clojure.string/split-lines "./amalgum/amalgum/fiction/dep/AMALGUM_fiction_twain.conllu
   ./amalgum/amalgum/interview/dep/AMALGUM_interview_queensland.conllu
   ./amalgum/amalgum/academic/dep/AMALGUM_academic_arccos.conllu
   ./amalgum/amalgum/fiction/dep/AMALGUM_fiction_cracksman.conllu
@@ -273,9 +277,9 @@
   ./amalgum/amalgum/academic/dep/AMALGUM_academic_enterococcus.conllu
   ./amalgum/amalgum/fiction/dep/AMALGUM_fiction_madeline.conllu"))]
 
-    (cxc/ingest-conllu-files xtdb-node files))
+      (cxc/ingest-conllu-files xtdb-node files))
 
-  )
+    ))
 
 (comment
   ;; tokens
