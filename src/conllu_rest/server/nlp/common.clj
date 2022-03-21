@@ -27,7 +27,7 @@
     [(cxe/put* new)]))
 
 (defn get-sentence-ids-to-process [node anno-type]
-  (:sentences (cxe/entity node (job-id anno-type))))
+  (or (:sentences (cxe/entity node (job-id anno-type))) #{}))
 (defn- valid-url? [s]
   (try
     (do (io/as-url s)
