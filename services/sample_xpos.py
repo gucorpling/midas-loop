@@ -44,9 +44,11 @@ def tag_conllu(conllu_sentence: str) -> List[List[Tuple[str, float]]]:
 
     # Make label-proba pairs and sort them
     with_labels = [
-        list(sorted(zip(labels, probas), key=lambda x: -x[1]))
+        {label: proba for label, proba in zip(labels, probas)}
         for probas in token_probas
     ]
+    for x in with_labels:
+        print(x)
     return with_labels
 
 
@@ -73,11 +75,10 @@ SAMPLE = """# sent_id = AMALGUM_reddit_beatty-47
 
 def debug():
     tokens = conllu.parse(SAMPLE)[0]
-    tag_conllu(SAMPLE)
 
-    for token, pairs in zip(tokens, tag_conllu(SAMPLE)):
+    for token, probas in zip(tokens, tag_conllu(SAMPLE)):
         print(token["form"])
-        print(pairs[:5])
+        print({x:y for x,y in probas.items() if y > 0.0001})
         print()
 
 
