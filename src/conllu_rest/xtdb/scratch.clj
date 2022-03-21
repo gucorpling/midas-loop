@@ -162,6 +162,37 @@
    node doc-id data data2)
 
 
+  (require '[conllu-rest.xtdb-diff-test :as cxd])
+
+  (let [a cxd/realistic-before
+        b cxd/realistic-after]
+    (def node (xtdb.api/start-node {}))
+    (cxe/install-tx-fns! node)
+    (def xs (conllu-rest.conllu-parser/parse-conllu-string a))
+    (cxc/create-document node xs)
+    (def doc-id (:document/id (first (cxe/find-entities node [[:document/id '_]]))))
+    (def old-parsed (cp/parse-conllu-string a))
+    (def new-parsed (cp/parse-conllu-string b))
+    doc-id)
+
+  (println (cxs/serialize-document node doc-id))
+
+  (cxqd/apply-annotation-diff node doc-id cxd/realistic-before cxd/realistic-after)
+
+  (println cxd/realistic-after)
+
+  (let [expected-lines (clojure.string/split-lines (cxs/serialize-document node doc-id))
+        actual-lines (clojure.string/split-lines cxd/realistic-after)]
+    (doall (for [[a b] (map vector expected-lines actual-lines)]
+             (when-not (= a b)
+               (println a)
+               (println b)
+               (println))
+             ))
+    nil)
+
+  (cxqd/get-diff node doc-id new-parsed)
+
 
 
   (comment
