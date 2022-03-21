@@ -5,6 +5,7 @@
             [conllu-rest.routes.conllu.common :as cc]
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.xtdb.queries.document :as cxqd]
+            [conllu-rest.xtdb.queries.diff :as diff]
             [conllu-rest.xtdb.serialization :as serial]
             [spec-tools.data-spec :as ds]
             [xtdb.api :as xt]))
@@ -79,4 +80,19 @@
               :handler    get-handler}
      :delete {:summary    "Delete a document and all its contents"
               :parameters {:path {:id uuid?}}
-              :handler    delete-document}}]])
+              :handler    delete-document}}]
+   ["/diff"
+    {:post {:summary    (str "Provide old and new CoNLL-U strings for a doc and tell the server to apply the changes.")
+            :parameters {:body {:old-conllu string?
+                                :new-conllu string?
+                                :id         string?}}
+            :handler    (fn [{{:keys [old-conllu new-conllu id]} :body-params node :node :as req}]
+                          (if-let [document-id (common/parse-uuid id)]
+                            (let [status (diff/apply-annotation-diff node document-id old-conllu new-conllu)]
+                              (if status
+                                (ok)
+                                (bad-request (str "Failed to apply diff. Ensure the following:"
+                                                  "\n- Sentence and token boundaries are identical"
+                                                  "\n- Token forms are identical"
+                                                  "\n- DEPS has not changed"))))
+                            (bad-request "Document ID must be a valid java.util.UUID")))}}]])

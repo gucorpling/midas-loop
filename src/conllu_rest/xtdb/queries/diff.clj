@@ -10,7 +10,7 @@
             [conllu-rest.server.tokens :as tok]
             [conllu-rest.conllu-parser :as cp]
             [clojure.walk :as walk])
-  (:import (java.util ArrayList)))
+  (:import (java.text Normalizer$Form Normalizer)))
 
 (defn- filter-diff
   "Filter out all diff bits with a UUID as the value, except when it's a :head/value.
@@ -219,16 +219,31 @@
                              form-pairs)))
                  sentence-pairs))))
 
+(defn diff-lines [a b]
+  (let [expected-lines (map seq (clj-str/split-lines a))
+        actual-lines (map seq (clj-str/split-lines b))]
+    (remove nil?
+            (for [[a b] (map vector expected-lines actual-lines)]
+              (when-not (= a b)
+                [a b])))))
+
+(defn normalize-conllu-str [s]
+  (Normalizer/normalize (clj-str/trim (.replace s "\r\n", "\n")) Normalizer$Form/NFD))
+
 (cxe/deftx apply-annotation-diff [node document-id old-conllu new-conllu]
   (let [doc-tree (cxq/pull2 node :document/id document-id)
-        current-conllu (cxs/serialize-document node document-id)
+        current-conllu (normalize-conllu-str (cxs/serialize-document node document-id))
+        old-conllu (normalize-conllu-str old-conllu)
+        new-conllu (normalize-conllu-str new-conllu)
         old-parsed (try-parse old-conllu)
         new-parsed (try-parse new-conllu)]
-    (cond (not= (clj-str/trim current-conllu) (clj-str/trim old-conllu))
+    (cond (not= current-conllu old-conllu)
           (throw (ex-info (str "Old CoNLL-U string does not match current. Current:\n"
                                current-conllu
                                "\n\nSubmitted:\n"
-                               old-conllu)
+                               old-conllu
+                               "\n\nDiff:\n"
+                               (clj-str/join "\n" (map str (diff-lines current-conllu old-conllu))))
                           {:submitted old-conllu :actual current-conllu}))
 
           (instance? Exception old-parsed)
