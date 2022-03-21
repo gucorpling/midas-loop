@@ -30,6 +30,7 @@
     <logger name="io.undertow.request" level="info" />
     <logger name="io.undertow.session" level="warn" />
     <logger name="xtdb" level="debug" />
+    <logger name="org.eclipse" level="info" />
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />
         <appender-ref ref="FILE" />
