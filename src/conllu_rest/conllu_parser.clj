@@ -55,11 +55,15 @@
      (let [kv-pairs (string/split v #"\|")]
        (into {}
              (for [pair kv-pairs]
-               (let [index (string/index-of pair kv-sep)
-                     key (subs pair 0 index)
-                     key (if (= kv-sep ":") (parse-id key) key)
-                     value (subs pair (inc index))]
-                 [key value])))))))
+               ;; Attempt to parse pairs, silently dropping paris which failed to parse
+               (try
+                 (let [index (string/index-of pair kv-sep)
+                       key (subs pair 0 index)
+                       key (if (= kv-sep ":") (parse-id key) key)
+                       value (subs pair (inc index))]
+                   [key value])
+                 (catch Exception _
+                   nil))))))))
 
 (defn parse-token-line [line]
   (let [cols (string/split (string/trim line) #"\t")]
