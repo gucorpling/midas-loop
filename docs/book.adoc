@@ -16,4 +16,111 @@
 
 = Introduction
 
-TODO
+
+= Development
+https://leiningen.org/[Leiningen] is used to build code.
+
+== Dev Server
+Run `lein repl` in order to get a dev REPL, then execute `(start)` in the prompt.
+`(stop)` and `(restart)` are also available in the REPL.
+This will use the config at `env/dev/resources/config.edn`.
+
+== Testing
+Run `lein test`.
+This will use the config at `env/test/resources/config.edn`.
+
+== Prod Build
+Run `lein uberjar`.
+This will produce a standalone JAR ready for distribution and execution via `java -jar`.
+Unless overridden, this will use the config at `env/prod/resources/config.edn`.
+
+== Building Docs
+Install https://docs.asciidoctor.org/asciidoctor/latest/install/[Asciidoctor], then:
+
+```
+asciidoctor-pdf -o target/book.pdf -b pdf -r asciidoctor-diagram docs/book.adoc
+asciidoctor -o target/book.html -b html -r asciidoctor-diagram docs/book.adoc
+```
+
+= Setup
+== Server
+Get an uberjar (cf. <<Prod Build>>).
+Note the following top level commands:
+
+```
+COMMANDS:
+run, r               Start the web app and begin listening for requests.
+import, i            Read and ingest CoNLL-U files.
+export, e            Export all documents in the database as CoNLL-U files.
+token, t             Token-related helpers.
+```
+
+Run one of the top level commands (e.g. `java -jar conllu-rest.jar import --help`) to see more details about each command.
+
+IMPORTANT: Each command requires that your server not be running.
+If you are running your server using the `run` command, be sure you shut it down before running any of the other commands.
+
+== Authorization
+=== Granting
+Token-based authorization is used.
+Each user should have a token made for them, like so:
+
+```
+java -jar conllu-rest.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"
+```
+
+Give your user their token and instruct them to keep it secret.
+
+NOTE: Tokens that will be used by humans should have `gold` quality, and tokens that will be used by models should have `silver` quality.
+
+=== Listing
+You can see all valid tokens with `java -jar conllu-rest.jar token list`.
+
+=== Revoking
+You can revoke a token like so:
+
+```
+java -jar conllu-rest.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"
+```
+
+== NLP Services
+qwe
+
+== Configuration
+By default, the uberjar will use its copy of the config located at https://github.com/lgessler/conllu-rest/blob/master/env/dev/resources/config.edn[`env/prod/resources/config.edn`].
+If you wish to customize this, specify another config using `-Dconf=...`:
+
+`java -Dconf="/path/to/my/config.edn" -jar conllu-rest.jar ...`
+
+Config keys:
+
+[cols="1,1"]
+|===
+|`:conllu-rest.server.xtdb/config`
+|Should be a map with two subkeys: `:main-db-dir` (required) has a string specifying the main database's path on the filesystem relative to the CWD; `:http-server-port`, if present, should be a number specifying the port on which to serve XTDB's internal HTTP interface.
+
+|`:conllu-rest.server.tokens/config`
+|Map with a single key, `:token-db-dir`, (required) which specifies the location on the filepath of the authorization token database.
+
+|`:dev`
+|Either `true` or `false`. If `true`, do not require any authorization. This should always be `false` in production.
+
+|`:nlp-services`
+| A vector of three-key maps. Each map should have a `:type` (currently always `:http`), a `:anno-type` (must be `:xpos`, `:upos`, or `:head`), and a url (must be pointed at a running <<NLP Services>>)
+
+|`:port`
+| Port used for the main web server. Must be a number.
+
+| `:cors-patterns`
+| A set of CORS patterns (regular expressions) for adding additional allowed origins, e.g. `#{"*.georgetown.edu"}`.
+Localhost and the main origin are always allowed regardless of this item's value.
+|===
+
+= Operation
+== API
+Run your server and see `/swagger-ui/`.
+
+TODO: add detail
+
+=== Upload
+=== Diffing
