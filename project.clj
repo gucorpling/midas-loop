@@ -18,7 +18,7 @@
                  [metosin/ring-http-response "0.9.3"]
                  [mount "0.1.16"]
                  [nrepl "0.8.3"]
-                 [org.clojure/clojure "1.10.3"]
+                 [org.clojure/clojure "1.11.0"]
                  [cli-matic "0.4.3"]
                  [org.clojure/tools.logging "1.1.0"]
                  [org.webjars.npm/bulma "0.9.2"]
