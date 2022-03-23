@@ -6,7 +6,8 @@
             [conllu-rest.xtdb.easy :as cxe]
             [conllu-rest.server.nlp.common :refer [SentenceLevelProbDistProvider complete-job get-sentence-ids-to-process]]
             [conllu-rest.xtdb.queries :as cxq]
-            [xtdb.api :as xt]))
+            [xtdb.api :as xt]
+            [conllu-rest.common :as common]))
 
 (defn parse-response [data sentence-id token-count]
   (when-let [parsed (try (json/parse-string data)
@@ -26,7 +27,13 @@
                        "a list of pairs where each pair has a label and its probability")
 
             :else
-            parsed))))
+            ;; If the keys, i.e. the labels, are UUID-y, then parse them as UUIDs
+            (update parsed "probabilities" update-vals
+                    (fn [v]
+                      (update-keys v
+                                   (fn [v] (if-let [id (common/parse-uuid v)]
+                                             id
+                                             v)))))))))
 
 (defn validate [{:sentence/keys [tokens id] :as sentence} data]
   (if (nil? sentence)
@@ -35,6 +42,24 @@
       (if-let [parsed-data (parse-response data id (count tokens))]
         {:status :ok :data parsed-data}
         {:status :bad-data}))))
+
+(cxe/deftx -write-probas [node key token-probas-pairs]
+  (let [db (xt/db node)
+        anno-type (namespace key)
+        tx (mapv (fn [[{:token/keys [id]} probas]]
+                   ;; todo: actually need to fetch the anno record
+                   (let [token (xt/entity db id)
+                         anno (xt/entity db ((keyword "token" anno-type) token))]
+                     (-> anno
+                         (assoc key probas)
+                         cxe/put*)))
+                 token-probas-pairs)]
+    tx))
+
+(defn write-probas [node key token-probas-pairs]
+  (when-not (#{:xpos/probas :upos/probas :head/probas} key)
+    (throw (ex-info "Invalid probas key:" {:key key})))
+  (-write-probas node key token-probas-pairs))
 
 (def ^:dynamic *retry-wait-period* 10000)
 (defn get-probas
@@ -79,15 +104,10 @@
                     (Thread/sleep *retry-wait-period*)
                     (log/info "Retrying...")
                     (recur))
+                  ;; success: write em!
                   (let [pairs (partition 2 (interleave tokens (data "probabilities")))
-                        tx (mapv (fn [[token probas]]
-                                   (let [probas (sort-by #(- (second %)) probas)]
-                                     ))
-                                 pairs)]
-                    ;; TODO make a tx to put the tokens
-                    #_(xt/await-tx node (xt/submit-tx node tx))))
-
-                ))))))
+                        probas-key (keyword (name anno-type) "probas")]
+                    (write-probas node probas-key pairs)))))))))
 
 (defrecord HttpProbDistProvider [config]
   SentenceLevelProbDistProvider

@@ -17,7 +17,10 @@
             (write-error (str "Entity is not a " (namespace id-keyword) ": " m))
 
             :else
-            (let [tx [(cxe/put* (merge entity (select-keys m [id-keyword (keyword (namespace id-keyword) "value")])))]]
+            (let [gold-key (keyword (namespace id-keyword) "quality")
+                  tx [(cxe/put* (merge entity
+                                       (select-keys m [id-keyword (keyword (namespace id-keyword) "value")])
+                                       {gold-key "gold"}))]]
               (if (cxe/submit-tx-sync node tx)
                 (write-ok)
                 (write-error "Failed to put entity")))))))

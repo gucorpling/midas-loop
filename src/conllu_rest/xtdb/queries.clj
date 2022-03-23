@@ -43,14 +43,14 @@
                {:token/deps (get-pull-fragment :deps/id)}
                {:token/misc (get-pull-fragment :misc/id)}]
     :form/id [:form/id :form/value]
-    :lemma/id [:lemma/id :lemma/value]
-    :upos/id [:upos/id :upos/value]
-    :xpos/id [:xpos/id :xpos/value]
-    :feats/id [:feats/id :feats/key :feats/value]
-    :head/id [:head/id :head/value]
-    :deprel/id [:deprel/id :deprel/value]
-    :deps/id [:deps/id :deps/key :deps/value]
-    :misc/id [:misc/id :misc/key :misc/value]))
+    :lemma/id [:lemma/id :lemma/value :lemma/quality]
+    :upos/id [:upos/id :upos/value :upos/probas :upos/quality]
+    :xpos/id [:xpos/id :xpos/value :xpos/probas :xpos/quality]
+    :feats/id [:feats/id :feats/key :feats/value :feats/quality]
+    :head/id [:head/id :head/value :head/probas :head/quality]
+    :deprel/id [:deprel/id :deprel/value :deprel/quality]
+    :deps/id [:deps/id :deps/key :deps/value :deps/quality]
+    :misc/id [:misc/id :misc/key :misc/value :misc/quality]))
 
 (defn pull
   "Given a node and a map like {:token/id ::id}, return a complete map of everything on that
@@ -85,7 +85,11 @@
        get-pull-fragment
        (postwalk (fn [x]
                    (if (vector? x)
-                     (into {} (map (fn [v] (if (keyword? v) [v v] [(first (keys v)) v])) x))
+                     (apply array-map (flatten (map (fn [v]
+                                                      (if (keyword? v)
+                                                        [v v]
+                                                        [(first (keys v)) v]))
+                                                    x)))
                      x)))))
 
 ;; Stores k-v pairs, where k is an ID type that is stored below or at the sentence level, and
@@ -109,8 +113,8 @@
           query-symbols (concat ['?s] (map #(symbol (str "?" %)) (range (dec (count attrs)))) ['?input])
           symbol-pairs (partition 2 1 query-symbols)
           triples (mapv (fn [attr [v1 v2]] [v1 attr v2])
-                       attrs
-                       symbol-pairs)
+                        attrs
+                        symbol-pairs)
           query {:find  ['?s]
                  :where triples
                  :input ['?input]}]
