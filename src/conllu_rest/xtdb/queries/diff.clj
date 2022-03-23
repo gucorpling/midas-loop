@@ -228,7 +228,9 @@
                 [a b])))))
 
 (defn normalize-conllu-str [s]
-  (Normalizer/normalize (clj-str/trim (.replace s "\r\n", "\n")) Normalizer$Form/NFD))
+  ;;(Normalizer/normalize (clj-str/trim (.replace s "\r\n", "\n")) Normalizer$Form/NFD)
+  (clj-str/trim (.replace s "\r\n", "\n"))
+  )
 
 (cxe/deftx apply-annotation-diff [node document-id old-conllu new-conllu]
   (let [doc-tree (cxq/pull2 node :document/id document-id)

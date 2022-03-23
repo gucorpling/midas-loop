@@ -185,8 +185,8 @@
         actual-lines (clojure.string/split-lines cxd/realistic-after)]
     (doall (for [[a b] (map vector expected-lines actual-lines)]
              (when-not (= a b)
-               (println a)
-               (println b)
+               (println (seq a))
+               (println (seq b))
                (println))
              ))
     nil)
