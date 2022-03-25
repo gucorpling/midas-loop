@@ -8,27 +8,96 @@
             [conllu-rest.xtdb.queries.diff :as diff]
             [conllu-rest.xtdb.serialization :as serial]
             [spec-tools.data-spec :as ds]
-            [xtdb.api :as xt]))
+            [xtdb.api :as xt]
+            [xtdb.query]))
+
+(def ^:private sort-map
+  {"name-inc"      '[?dn :asc]
+   "name-dec"      '[?dn :desc]
+   "xpos-gold-inc" '[(count-contents ?xpos-gold) :asc]
+   "xpos-gold-dec" '[(count-contents ?xpos-gold) :desc]
+   "upos-gold-inc" '[(count-contents ?upos-gold) :asc]
+   "upos-gold-dec" '[(count-contents ?upos-gold) :desc]
+   "head-gold-inc" '[(count-contents ?head-gold) :asc]
+   "head-gold-dec" '[(count-contents ?head-gold) :desc]})
+
+(defmethod xtdb.query/aggregate 'count-contents [_]
+  (fn
+    ([] 0)
+    ([acc] acc)
+    ([acc x]
+     (cond (nil? x) acc
+           (coll? x) (+ acc (count x))
+           :else (+ acc 1)))))
 
 (defn document-query [{:keys [node] :as req}]
-  (let [{:keys [limit offset]} (-> req :parameters :query)]
-    (let [offset (or (and (int? offset) (>= offset 0) offset) 0)]
+  (let [{:keys [limit offset order-by]} (-> req :parameters :query)]
+    (let [offset (or (and (int? offset) (>= offset 0) offset) 0)
+          sort-set (-> sort-map keys set)]
       (cond (not (and (some? limit) (int? limit) (<= limit 100) (> limit 0)))
             (bad-request (str "Limit must be an int between 1 and 100, but got " limit))
 
             (not (and (int? offset) (>= offset 0)))
             (bad-request (str "Offset must be a non-negative integer: " offset))
 
+            (not (sort-set order-by))
+            (bad-request (str "order-by parameter must be one of the following: " sort-set))
+
             :else
-            (let [query {:find     '[?d ?dn]
+            (let [query {:find     '[?d ?dn (count ?s) (count-contents ?t)
+                                     (count-contents ?xpos-gold)
+                                     (count-contents ?upos-gold)
+                                     (count-contents ?head-gold)]
                          :where    '[[?d :document/id]
-                                     [?d :document/name ?dn]]
-                         :order-by '[[?dn :desc]]
+                                     [?d :document/name ?dn]
+                                     [?d :document/sentences ?s]
+                                     ;; subquery: find tokens
+                                     [(q {:find  [?t],
+                                          :where [[?s :sentence/tokens ?t]]
+                                          :in    [?s]} ?s)
+                                      ?t]
+
+                                     ;; subquery: find amount of gold xpos
+                                     [(q {:find  [?xpos]
+                                          :where [[?s :sentence/tokens ?t]
+                                                  [?t :token/xpos ?xpos]
+                                                  [?xpos :xpos/quality "gold"]]
+                                          :in    [?s]}
+                                         ?s)
+                                      ?xpos-gold]
+
+                                     ;; subquery: find amount of gold upos
+                                     [(q {:find  [?upos]
+                                          :where [[?d :document/sentences ?s]
+                                                  [?s :sentence/tokens ?t]
+                                                  [?t :token/upos ?upos]
+                                                  [?upos :upos/quality "gold"]]
+                                          :in    [?d]}
+                                         ?d)
+                                      ?upos-gold]
+
+                                     ;; subquery: find amount of gold head
+                                     [(q {:find  [?head]
+                                          :where [[?d :document/sentences ?s]
+                                                  [?s :sentence/tokens ?t]
+                                                  [?t :token/head ?head]
+                                                  [?head :head/quality "gold"]]
+                                          :in    [?d]}
+                                         ?d)
+                                      ?head-gold]]
+                         :order-by [(sort-map order-by)]
                          :limit    limit
                          :offset   offset}
                   count-query {:find  '[(count ?d)]
                                :where '[[?d :document/id]]}]
-              (ok {:docs  (mapv (fn [[id name]] {:id id :name name})
+              (ok {:docs  (mapv (fn [[id name scount tcount xpos-gold upos-gold head-gold :as vals]]
+                                  {:id             id
+                                   :name           name
+                                   :sentence_count scount
+                                   :token_count    tcount
+                                   :xpos_gold_rate (/ xpos-gold tcount)
+                                   :upos_gold_rate (/ upos-gold tcount)
+                                   :head_gold_rate (/ head-gold tcount)})
                                 (xt/q (xt/db node) query))
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
 
@@ -69,8 +138,9 @@
   ["/document"
    [""
     {:get {:summary    "Fetch a page's worth of docs (at \"docs\") and a total count of docs (at \"total\")"
-           :parameters {:query {:offset int?
-                                :limit  int?}}
+           :parameters {:query {:offset   int?
+                                :limit    int?
+                                :order-by (ds/maybe (s/spec (-> sort-map keys set)))}}
            :handler    document-query}}]
    ["/id/:id"
     {:get    {:summary    (str "Produce representation of a document. Use \"format\" query param to get "

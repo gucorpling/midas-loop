@@ -4,6 +4,7 @@
             [cheshire.core :as json]
             [conllu-rest.xtdb.serialization :as serialization]
             [conllu-rest.xtdb.easy :as cxe]
+            [conllu-rest.server.config :refer [env]]
             [conllu-rest.server.nlp.common :refer [SentenceLevelProbDistProvider complete-job get-sentence-ids-to-process]]
             [conllu-rest.xtdb.queries :as cxq]
             [xtdb.api :as xt]
@@ -61,7 +62,7 @@
     (throw (ex-info "Invalid probas key:" {:key key})))
   (-write-probas node key token-probas-pairs))
 
-(def ^:dynamic *retry-wait-period* 10000)
+(def ^:dynamic *retry-wait-period* (or (:nlp-retry-wait-period-ms env) 10000))
 (defn get-probas
   "Attempt to contact an NLP service, defensively dealing with request failures and bad data"
   [node url anno-type sentence-id]

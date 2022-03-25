@@ -84,7 +84,8 @@ java -jar conllu-rest.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuE
 ```
 
 == NLP Services
-qwe
+See https://github.com/lgessler/conllu-rest/blob/master/services/sample_xpos.py[`services/sample_xpos.py`] for a sample service.
+Only XPOS, UPOS, and HEAD are currently supported.
 
 == Configuration
 By default, the uberjar will use its copy of the config located at https://github.com/lgessler/conllu-rest/blob/master/env/dev/resources/config.edn[`env/prod/resources/config.edn`].
@@ -107,6 +108,9 @@ Config keys:
 
 |`:nlp-services`
 | A vector of three-key maps. Each map should have a `:type` (currently always `:http`), a `:anno-type` (must be `:xpos`, `:upos`, or `:head`), and a url (must be pointed at a running <<NLP Services>>)
+
+|`:nlp-retry-wait-period-ms`
+| Time, in milliseconds, to wait after a failure before attempting to contact an HTTP NLP service again. Defaults to `10000` (10 seconds).
 
 |`:port`
 | Port used for the main web server. Must be a number.
