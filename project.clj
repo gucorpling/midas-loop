@@ -34,10 +34,10 @@
                  [clj-http "3.12.3"]
                  [juji/editscript "0.5.8"]
 
-                 [com.xtdb/xtdb-core "1.19.0-beta1"]
-                 [com.xtdb/xtdb-lmdb "1.19.0-beta1"]
-                 [com.xtdb/xtdb-rocksdb "1.19.0-beta1"]
-                 [com.xtdb/xtdb-http-server "1.19.0-beta1"]]
+                 [com.xtdb/xtdb-core "1.21.0-beta1"]
+                 [com.xtdb/xtdb-lmdb "1.21.0-beta1"]
+                 [com.xtdb/xtdb-rocksdb "1.21.0-beta1"]
+                 [com.xtdb/xtdb-http-server "1.21.0-beta1"]]
 
   :min-lein-version "2.0.0"
 
