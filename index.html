@@ -449,6 +449,38 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
 <li><a href="#_introduction">1. Introduction</a></li>
+<li><a href="#_development">2. Development</a>
+<ul class="sectlevel2">
+<li><a href="#_dev_server">2.1. Dev Server</a></li>
+<li><a href="#_testing">2.2. Testing</a></li>
+<li><a href="#_prod_build">2.3. Prod Build</a></li>
+<li><a href="#_building_docs">2.4. Building Docs</a></li>
+</ul>
+</li>
+<li><a href="#_setup">3. Setup</a>
+<ul class="sectlevel2">
+<li><a href="#_server">3.1. Server</a></li>
+<li><a href="#_authorization">3.2. Authorization</a>
+<ul class="sectlevel3">
+<li><a href="#_granting">3.2.1. Granting</a></li>
+<li><a href="#_listing">3.2.2. Listing</a></li>
+<li><a href="#_revoking">3.2.3. Revoking</a></li>
+</ul>
+</li>
+<li><a href="#_nlp_services">3.3. NLP Services</a></li>
+<li><a href="#_configuration">3.4. Configuration</a></li>
+</ul>
+</li>
+<li><a href="#_operation">4. Operation</a>
+<ul class="sectlevel2">
+<li><a href="#_api">4.1. API</a>
+<ul class="sectlevel3">
+<li><a href="#_upload">4.1.1. Upload</a></li>
+<li><a href="#_diffing">4.1.2. Diffing</a></li>
+</ul>
+</li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -456,15 +488,219 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sect1">
 <h2 id="_introduction"><a class="anchor" href="#_introduction"></a><a class="link" href="#_introduction">1. Introduction</a></h2>
 <div class="sectionbody">
+
+</div>
+</div>
+<div class="sect1">
+<h2 id="_development"><a class="anchor" href="#_development"></a><a class="link" href="#_development">2. Development</a></h2>
+<div class="sectionbody">
 <div class="paragraph">
-<p>TODO</p>
+<p><a href="https://leiningen.org/">Leiningen</a> is used to build code.</p>
+</div>
+<div class="sect2">
+<h3 id="_dev_server"><a class="anchor" href="#_dev_server"></a><a class="link" href="#_dev_server">2.1. Dev Server</a></h3>
+<div class="paragraph">
+<p>Run <code>lein repl</code> in order to get a dev REPL, then execute <code>(start)</code> in the prompt.
+<code>(stop)</code> and <code>(restart)</code> are also available in the REPL.
+This will use the config at <code>env/dev/resources/config.edn</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_testing"><a class="anchor" href="#_testing"></a><a class="link" href="#_testing">2.2. Testing</a></h3>
+<div class="paragraph">
+<p>Run <code>lein test</code>.
+This will use the config at <code>env/test/resources/config.edn</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_prod_build"><a class="anchor" href="#_prod_build"></a><a class="link" href="#_prod_build">2.3. Prod Build</a></h3>
+<div class="paragraph">
+<p>Run <code>lein uberjar</code>.
+This will produce a standalone JAR ready for distribution and execution via <code>java -jar</code>.
+Unless overridden, this will use the config at <code>env/prod/resources/config.edn</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_building_docs"><a class="anchor" href="#_building_docs"></a><a class="link" href="#_building_docs">2.4. Building Docs</a></h3>
+<div class="paragraph">
+<p>Install <a href="https://docs.asciidoctor.org/asciidoctor/latest/install/">Asciidoctor</a>, then:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>asciidoctor-pdf -o target/book.pdf -b pdf -r asciidoctor-diagram docs/book.adoc
+asciidoctor -o target/book.html -b html -r asciidoctor-diagram docs/book.adoc</code></pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_setup"><a class="anchor" href="#_setup"></a><a class="link" href="#_setup">3. Setup</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_server"><a class="anchor" href="#_server"></a><a class="link" href="#_server">3.1. Server</a></h3>
+<div class="paragraph">
+<p>Get an uberjar (cf. <a href="#_prod_build">Prod Build</a>).
+Note the following top level commands:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>COMMANDS:
+run, r               Start the web app and begin listening for requests.
+import, i            Read and ingest CoNLL-U files.
+export, e            Export all documents in the database as CoNLL-U files.
+token, t             Token-related helpers.</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Run one of the top level commands (e.g. <code>java -jar conllu-rest.jar import --help</code>) to see more details about each command.</p>
+</div>
+<div class="admonitionblock important">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+Each command requires that your server not be running.
+If you are running your server using the <code>run</code> command, be sure you shut it down before running any of the other commands.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_authorization"><a class="anchor" href="#_authorization"></a><a class="link" href="#_authorization">3.2. Authorization</a></h3>
+<div class="sect3">
+<h4 id="_granting"><a class="anchor" href="#_granting"></a><a class="link" href="#_granting">3.2.1. Granting</a></h4>
+<div class="paragraph">
+<p>Token-based authorization is used.
+Each user should have a token made for them, like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>java -jar conllu-rest.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Give your user their token and instruct them to keep it secret.</p>
+</div>
+<div class="admonitionblock note">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+Tokens that will be used by humans should have <code>gold</code> quality, and tokens that will be used by models should have <code>silver</code> quality.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_listing"><a class="anchor" href="#_listing"></a><a class="link" href="#_listing">3.2.2. Listing</a></h4>
+<div class="paragraph">
+<p>You can see all valid tokens with <code>java -jar conllu-rest.jar token list</code>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_revoking"><a class="anchor" href="#_revoking"></a><a class="link" href="#_revoking">3.2.3. Revoking</a></h4>
+<div class="paragraph">
+<p>You can revoke a token like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>java -jar conllu-rest.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_nlp_services"><a class="anchor" href="#_nlp_services"></a><a class="link" href="#_nlp_services">3.3. NLP Services</a></h3>
+<div class="paragraph">
+<p>See <a href="https://github.com/lgessler/conllu-rest/blob/master/services/sample_xpos.py"><code>services/sample_xpos.py</code></a> for a sample service.
+Only XPOS, UPOS, and HEAD are currently supported.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_configuration"><a class="anchor" href="#_configuration"></a><a class="link" href="#_configuration">3.4. Configuration</a></h3>
+<div class="paragraph">
+<p>By default, the uberjar will use its copy of the config located at <a href="https://github.com/lgessler/conllu-rest/blob/master/env/dev/resources/config.edn"><code>env/prod/resources/config.edn</code></a>.
+If you wish to customize this, specify another config using <code>-Dconf=&#8230;&#8203;</code>:</p>
+</div>
+<div class="paragraph">
+<p><code>java -Dconf="/path/to/my/config.edn" -jar conllu-rest.jar &#8230;&#8203;</code></p>
+</div>
+<div class="paragraph">
+<p>Config keys:</p>
+</div>
+<table class="tableblock frame-all grid-all stretch">
+<colgroup>
+<col style="width: 50%;">
+<col style="width: 50%;">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:conllu-rest.server.xtdb/config</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Should be a map with two subkeys: <code>:main-db-dir</code> (required) has a string specifying the main database&#8217;s path on the filesystem relative to the CWD; <code>:http-server-port</code>, if present, should be a number specifying the port on which to serve XTDB&#8217;s internal HTTP interface.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:conllu-rest.server.tokens/config</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Map with a single key, <code>:token-db-dir</code>, (required) which specifies the location on the filepath of the authorization token database.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:dev</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Either <code>true</code> or <code>false</code>. If <code>true</code>, do not require any authorization. This should always be <code>false</code> in production.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:nlp-services</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A vector of three-key maps. Each map should have a <code>:type</code> (currently always <code>:http</code>), a <code>:anno-type</code> (must be <code>:xpos</code>, <code>:upos</code>, or <code>:head</code>), and a url (must be pointed at a running <a href="#_nlp_services">NLP Services</a>)</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:nlp-retry-wait-period-ms</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Time, in milliseconds, to wait after a failure before attempting to contact an HTTP NLP service again. Defaults to <code>10000</code> (10 seconds).</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:port</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Port used for the main web server. Must be a number.</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:cors-patterns</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A set of CORS patterns (regular expressions) for adding additional allowed origins, e.g. <code>#{"*.georgetown.edu"}</code>.
+Localhost and the main origin are always allowed regardless of this item&#8217;s value.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_operation"><a class="anchor" href="#_operation"></a><a class="link" href="#_operation">4. Operation</a></h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_api"><a class="anchor" href="#_api"></a><a class="link" href="#_api">4.1. API</a></h3>
+<div class="paragraph">
+<p>Run your server and see <code>/swagger-ui/</code>.</p>
+</div>
+<div class="paragraph">
+<p>TODO: add detail</p>
+</div>
+<div class="sect3">
+<h4 id="_upload"><a class="anchor" href="#_upload"></a><a class="link" href="#_upload">4.1.1. Upload</a></h4>
+
+</div>
+<div class="sect3">
+<h4 id="_diffing"><a class="anchor" href="#_diffing"></a><a class="link" href="#_diffing">4.1.2. Diffing</a></h4>
+
+</div>
 </div>
 </div>
 </div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-01-13 14:20:15 -0500
+Last updated 2022-03-25 02:02:19 -0400
 </div>
 </div>
 </body>
