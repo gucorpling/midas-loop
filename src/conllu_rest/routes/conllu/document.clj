@@ -34,8 +34,8 @@
   (let [{:keys [limit offset order-by]} (-> req :parameters :query)]
     (let [offset (or (and (int? offset) (>= offset 0) offset) 0)
           sort-set (-> sort-map keys set)]
-      (cond (not (and (some? limit) (int? limit) (<= limit 100) (> limit 0)))
-            (bad-request (str "Limit must be an int between 1 and 100, but got " limit))
+      (cond (not (and (some? limit) (int? limit) (> limit 0)))
+            (bad-request (str "Limit must be an int greater than 0, but got " limit))
 
             (not (and (int? offset) (>= offset 0)))
             (bad-request (str "Offset must be a non-negative integer: " offset))
