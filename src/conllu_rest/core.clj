@@ -35,13 +35,23 @@
 
 (defn import [args]
   (mount/start-with-args args)
-  (log/info (:filepaths args))
-  (ingest-conllu-files xtdb-node (:filepaths args))
-  (log/info (str "Successfully imported " (count (:filepaths args)) " documents:"))
-  (println "\nBegin document manifest:\n")
-  (doseq [name (:filepaths args)]
-    (println (str "\t- " name)))
-  (println "\nEnd document manifest.\n"))
+  (let [filepaths (reduce (fn [filepaths x]
+                            (if (.isDirectory (io/file x))
+                              (into filepaths (->> (file-seq (io/file x))
+                                                   (filter #(.. %
+                                                                (toPath)
+                                                                (getFileName)
+                                                                (toString)
+                                                                (endsWith ".conllu")))))
+                              (conj filepaths x)))
+                          []
+                          (:filepaths args))]
+    (ingest-conllu-files xtdb-node filepaths)
+    (log/info (str "Successfully imported " (count filepaths) " documents:"))
+    (println "\nBegin document manifest:\n")
+    (doseq [name filepaths]
+      (println (str "\t- " name)))
+    (println "\nEnd document manifest.\n")))
 
 (defn export [args]
   (mount/start-with-args args)
@@ -103,7 +113,7 @@
                                 "NOTE: you should only run this command while your server is shut down."]
                   :opts        [{:option   "filepaths"
                                  :short    0
-                                 :as       "paths to CoNLL-U files to ingest"
+                                 :as       "paths to CoNLL-U files to ingest, or a directory with CoNLL-U files"
                                  :type     :string
                                  :multiple true}]
                   :runs        import
@@ -115,10 +125,10 @@
                   :description ["Export all documents in the database as CoNLL-U files."
                                 ""
                                 "NOTE: you should only run this command while your server is shut down."]
-                  :opts        [{:option   "outpath"
-                                 :short    0
-                                 :as       "Directory where the CoNLL-U files should be written"
-                                 :type     :string}]
+                  :opts        [{:option "outpath"
+                                 :short  0
+                                 :as     "Directory where the CoNLL-U files should be written"
+                                 :type   :string}]
                   :runs        export
                   :on-shutdown stop-app}
 

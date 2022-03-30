@@ -88,7 +88,7 @@ See https://github.com/lgessler/conllu-rest/blob/master/services/sample_xpos.py[
 Only XPOS, UPOS, and HEAD are currently supported.
 
 == Configuration
-By default, the uberjar will use its copy of the config located at https://github.com/lgessler/conllu-rest/blob/master/env/dev/resources/config.edn[`env/prod/resources/config.edn`].
+By default, the uberjar will use its copy of the config located at https://github.com/lgessler/conllu-rest/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
 If you wish to customize this, specify another config using `-Dconf=...`:
 
 `java -Dconf="/path/to/my/config.edn" -jar conllu-rest.jar ...`
@@ -121,6 +121,9 @@ Localhost and the main origin are always allowed regardless of this item's value
 |===
 
 = Operation
+== Importing
+`java -jar conllu-rest.jar import dir/with/conllu-files/`
+
 == API
 Run your server and see `/swagger-ui/`.
 
