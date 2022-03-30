@@ -34,7 +34,8 @@
   (shutdown-agents))
 
 (defn import [args]
-  (mount/start-with-args args)
+  (binding [conllu-rest.server.xtdb/*listen?* false]
+    (mount/start-with-args args))
   (let [filepaths (reduce (fn [filepaths x]
                             (if (.isDirectory (io/file x))
                               (into filepaths (->> (file-seq (io/file x))

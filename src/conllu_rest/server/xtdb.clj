@@ -24,11 +24,14 @@
                                :http-server-port (-> env ::config :http-server-port)}))
 
 
+(def ^:dynamic *listen?* true)
+
 (defstate xtdb-node
   :start (let [node (start-main-node)
                f (partial nlpl/xtdb-listen node nlp/agent-map)]
            (install-tx-fns! node)
-           (xt/listen node {::xt/event-type ::xt/indexed-tx, :with-tx-ops? true} f)
-           (nlpl/assign-jobs node nlp/agent-map)
+           (when *listen?*
+             (xt/listen node {::xt/event-type ::xt/indexed-tx, :with-tx-ops? true} f)
+             (nlpl/assign-jobs node nlp/agent-map))
            node)
   :stop (.close xtdb-node))
