@@ -14,21 +14,12 @@
 (def ^:private sort-map
   {"name-inc"      '[?dn :asc]
    "name-dec"      '[?dn :desc]
-   "xpos-gold-inc" '[(count-contents ?xpos-gold) :asc]
-   "xpos-gold-dec" '[(count-contents ?xpos-gold) :desc]
-   "upos-gold-inc" '[(count-contents ?upos-gold) :asc]
-   "upos-gold-dec" '[(count-contents ?upos-gold) :desc]
-   "head-gold-inc" '[(count-contents ?head-gold) :asc]
-   "head-gold-dec" '[(count-contents ?head-gold) :desc]})
-
-(defmethod xtdb.query/aggregate 'count-contents [_]
-  (fn
-    ([] 0)
-    ([acc] acc)
-    ([acc x]
-     (cond (nil? x) acc
-           (coll? x) (+ acc (count x))
-           :else (+ acc 1)))))
+   "xpos-gold-inc" '[?xgr :asc]
+   "xpos-gold-dec" '[?xgr :desc]
+   "upos-gold-inc" '[?ugr :asc]
+   "upos-gold-dec" '[?ugr :desc]
+   "head-gold-inc" '[?hgr :asc]
+   "head-gold-dec" '[?hgr :desc]})
 
 (defn document-query [{:keys [node] :as req}]
   (let [{:keys [limit offset order-by]} (-> req :parameters :query)]
@@ -44,60 +35,28 @@
             (bad-request (str "order-by parameter must be one of the following: " sort-set))
 
             :else
-            (let [query {:find     '[?d ?dn (count ?s) (count-contents ?t)
-                                     (count-contents ?xpos-gold)
-                                     (count-contents ?upos-gold)
-                                     (count-contents ?head-gold)]
+            (let [query {:find     '[?d ?dn ?tc ?sc ?xgr ?ugr ?hgr]
                          :where    '[[?d :document/id]
                                      [?d :document/name ?dn]
                                      [?d :document/sentences ?s]
-                                     ;; subquery: find tokens
-                                     [(q {:find  [?t],
-                                          :where [[?s :sentence/tokens ?t]]
-                                          :in    [?s]} ?s)
-                                      ?t]
-
-                                     ;; subquery: find amount of gold xpos
-                                     [(q {:find  [?xpos]
-                                          :where [[?s :sentence/tokens ?t]
-                                                  [?t :token/xpos ?xpos]
-                                                  [?xpos :xpos/quality "gold"]]
-                                          :in    [?s]}
-                                         ?s)
-                                      ?xpos-gold]
-
-                                     ;; subquery: find amount of gold upos
-                                     [(q {:find  [?upos]
-                                          :where [[?d :document/sentences ?s]
-                                                  [?s :sentence/tokens ?t]
-                                                  [?t :token/upos ?upos]
-                                                  [?upos :upos/quality "gold"]]
-                                          :in    [?d]}
-                                         ?d)
-                                      ?upos-gold]
-
-                                     ;; subquery: find amount of gold head
-                                     [(q {:find  [?head]
-                                          :where [[?d :document/sentences ?s]
-                                                  [?s :sentence/tokens ?t]
-                                                  [?t :token/head ?head]
-                                                  [?head :head/quality "gold"]]
-                                          :in    [?d]}
-                                         ?d)
-                                      ?head-gold]]
+                                     [?d :document/*sentence-count ?sc]
+                                     [?d :document/*token-count ?tc]
+                                     [?d :document/*xpos-gold-rate ?xgr]
+                                     [?d :document/*upos-gold-rate ?ugr]
+                                     [?d :document/*head-gold-rate ?hgr]]
                          :order-by [(sort-map order-by)]
                          :limit    limit
                          :offset   offset}
                   count-query {:find  '[(count ?d)]
                                :where '[[?d :document/id]]}]
-              (ok {:docs  (mapv (fn [[id name scount tcount xpos-gold upos-gold head-gold :as vals]]
+              (ok {:docs  (mapv (fn [[id name scount tcount xgr ugr hgr :as vals]]
                                   {:id             id
                                    :name           name
                                    :sentence_count scount
                                    :token_count    tcount
-                                   :xpos_gold_rate (/ xpos-gold tcount)
-                                   :upos_gold_rate (/ upos-gold tcount)
-                                   :head_gold_rate (/ head-gold tcount)})
+                                   :xpos_gold_rate xgr
+                                   :upos_gold_rate ugr
+                                   :head_gold_rate hgr})
                                 (xt/q (xt/db node) query))
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
 

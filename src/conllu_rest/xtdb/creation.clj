@@ -9,6 +9,7 @@
       ...
       :token/misc"
   (:require [conllu-rest.xtdb.easy :as cxe]
+            [conllu-rest.xtdb.queries.document :as cxqd]
             [conllu-rest.conllu-parser :refer [parse-conllu-string]]
             [xtdb.api :as xt]
             [clojure.tools.logging :as log])
@@ -179,7 +180,9 @@
 (defn create-document
   "Call build-document and use its output to submit to a xtdb node"
   [xtdb-node document]
-  (cxe/submit-tx-sync xtdb-node (build-document document)))
+  (let [transactions (build-document document)]
+    (cxe/submit-tx-sync xtdb-node transactions)
+    (cxqd/calculate-stats xtdb-node (-> transactions first second :document/id))))
 
 (defn ingest-conllu-file
   "Given a system filepath, ingest it by reading it, parsing it, calling build-document on it,
@@ -190,7 +193,8 @@
                     slurp
                     parse-conllu-string)
         transactions (build-document parsed)]
-    (xt/submit-tx xtdb-node transactions)
+    (xt/await-tx xtdb-node (xt/submit-tx xtdb-node transactions))
+    (cxqd/calculate-stats xtdb-node (-> transactions first second :document/id))
     (log/info "Processed" (-> parsed first :metadata (->> (into {})) (get "newdoc id")))))
 
 (defn ingest-conllu-files

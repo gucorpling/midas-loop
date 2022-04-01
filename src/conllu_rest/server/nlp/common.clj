@@ -38,6 +38,7 @@
   "A SentenceLevelProbDistProvider is backed by an NLP model that can take an input sentence and
   provide a probability distribution for each instance of the kind of annotation that it handles
   in the sentence."
+  ;; Must make a call to cxqd/calculate-stats in completion
   (predict-prob-dists [this node sentence]))
 
 (s/def ::url valid-url?)

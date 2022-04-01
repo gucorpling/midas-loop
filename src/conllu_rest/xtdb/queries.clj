@@ -117,7 +117,7 @@
                         symbol-pairs)
           query {:find  ['?s]
                  :where triples
-                 :input ['?input]}]
+                 :in ['?input]}]
       (ffirst (xt/q (xt/db node) query id)))))
 
 ;; helpers --------------------------------------------------------------------------------

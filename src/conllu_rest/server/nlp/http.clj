@@ -8,7 +8,8 @@
             [conllu-rest.server.nlp.common :refer [SentenceLevelProbDistProvider complete-job get-sentence-ids-to-process]]
             [conllu-rest.xtdb.queries :as cxq]
             [xtdb.api :as xt]
-            [conllu-rest.common :as common]))
+            [conllu-rest.common :as common]
+            [conllu-rest.xtdb.queries.document :as cxqd]))
 
 (defn parse-response [data sentence-id token-count]
   (when-let [parsed (try (json/parse-string data)
@@ -116,13 +117,19 @@
     [this node sentence-id]
     (let [{:keys [url anno-type]} config]
       (if-let [sentence (cxe/entity node sentence-id)]
-        (let [start (System/currentTimeMillis)
+        (let [document-id (ffirst (xt/q (xt/db node)
+                                        {:find  ['?d]
+                                         :where '[[?d :document/sentences ?s]]
+                                         :in    ['?s]}
+                                        sentence-id))
+              start (System/currentTimeMillis)
               _ (get-probas node url anno-type sentence-id)
               end (System/currentTimeMillis)
               _ (complete-job node anno-type sentence-id)
               remaining (count (get-sentence-ids-to-process node anno-type))]
           (log/info (str "Completed " anno-type " job. " remaining " remaining."
                          " Est. time remaining: " (format "%.2f" (/ (* remaining (- end start)) 1000.)) " seconds."))
+          (cxqd/calculate-stats node document-id)
           this)
         (do
           (log/info (str "Sentence " sentence-id " appears to have been deleted before it was able to be processed."

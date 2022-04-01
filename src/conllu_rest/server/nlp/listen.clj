@@ -1,8 +1,10 @@
 (ns conllu-rest.server.nlp.listen
   "For integration with XTDB's event listener"
   (:require [conllu-rest.xtdb.queries :as queries]
+            [conllu-rest.xtdb.queries.document :as cxqd]
             [conllu-rest.server.nlp.common :as nlpc]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [xtdb.api :as xt])
   (:refer-clojure :exclude [ident?]))
 
 (defn- ident? [[id-type id]]
@@ -53,13 +55,26 @@
                        (sentence-ids-from-tx-general node tx-ops))]
     (when (seq sentence-ids)
       (log/info "Processed transaction. Affected sentence ids: " sentence-ids))
-    (doseq [[anno-type agent] agent-map]
-      (let [already-queued (nlpc/get-sentence-ids-to-process node anno-type)]
-        (doseq [sentence-id sentence-ids]
-          (when-not (already-queued sentence-id)
-            (log/info "Notifying agent" (get-in @agent [:config :anno-type]) "of change to" sentence-id)
-            (nlpc/submit-job node anno-type sentence-id)
-            (send-off agent nlpc/predict-prob-dists node sentence-id)))))))
+
+    ;; Calculate stats if there are no agents, otherwise agents are responsible
+    (if (empty? agent-map)
+      (doseq [sentence-id sentence-ids]
+        (let [document-id (ffirst (xt/q (xt/db node)
+                                        {:find  ['?d]
+                                         :where '[[?d :document/sentences ?s]]
+                                         :in    ['?s]}
+                                        sentence-id))]
+          (cxqd/calculate-stats node document-id)))
+      (doseq [[anno-type agent] agent-map]
+        (let [already-queued (nlpc/get-sentence-ids-to-process node anno-type)]
+          (doseq [sentence-id sentence-ids]
+            (do
+              (println already-queued)
+              (println sentence-id)
+              (when-not (already-queued sentence-id)
+                (log/info "Notifying agent" (get-in @agent [:config :anno-type]) "of change to" sentence-id)
+                (nlpc/submit-job node anno-type sentence-id)
+                (send-off agent nlpc/predict-prob-dists node sentence-id)))))))))
 
 (defn assign-jobs [node agent-map]
   (doseq [[anno-type agent] agent-map]
