@@ -2,8 +2,7 @@
   (:require [conllu-rest.xtdb.queries :as cxq :refer [write-error write-ok]]
             [xtdb.api :as xt]
             [xtdb.query]
-            [conllu-rest.xtdb.easy :as cxe]
-            [clojure.tools.logging :as log]))
+            [conllu-rest.xtdb.easy :as cxe]))
 
 (defn delete [node document-id]
   (locking node
@@ -76,5 +75,4 @@
                  :document/*head-gold-rate (/ hgr tcount)}]
       (when-not (= 1 (count res))
         (throw (ex-info "ID produced a result set that did not have exactly one member!" {:document-id document-id})))
-      (log/info (str "Recalculated stats for " document-id ": " stats))
       (cxe/put node (merge (cxe/entity node document-id) stats)))))

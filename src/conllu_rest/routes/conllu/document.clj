@@ -35,8 +35,8 @@
             (bad-request (str "order-by parameter must be one of the following: " sort-set))
 
             :else
-            (let [query {:find     '[?d ?dn ?tc ?sc ?xgr ?ugr ?hgr]
-                         :where    '[[?d :document/id]
+            (let [query {:find     '[?d (distinct ?id) ?dn ?tc ?sc ?xgr ?ugr ?hgr]
+                         :where    '[[?d :document/id ?id]
                                      [?d :document/name ?dn]
                                      [?d :document/sentences ?s]
                                      [?d :document/*sentence-count ?sc]
@@ -48,7 +48,8 @@
                          :limit    limit
                          :offset   offset}
                   count-query {:find  '[(count ?d)]
-                               :where '[[?d :document/id]]}]
+                               :where '[[?d :document/id]]}
+                  result (xt/q (xt/db node) query)]
               (ok {:docs  (mapv (fn [[id name scount tcount xgr ugr hgr :as vals]]
                                   {:id             id
                                    :name           name
@@ -57,7 +58,7 @@
                                    :xpos_gold_rate xgr
                                    :upos_gold_rate ugr
                                    :head_gold_rate hgr})
-                                (xt/q (xt/db node) query))
+                                result)
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
 
 (defn get-handler [{:keys [query-params path-params node] :as request}]
