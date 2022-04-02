@@ -35,7 +35,7 @@
             (bad-request (str "order-by parameter must be one of the following: " sort-set))
 
             :else
-            (let [query {:find     '[?d (distinct ?id) ?dn ?tc ?sc ?xgr ?ugr ?hgr]
+            (let [query {:find     '[(distinct ?d) ?id ?dn ?tc ?sc ?xgr ?ugr ?hgr]
                          :where    '[[?d :document/id ?id]
                                      [?d :document/name ?dn]
                                      [?d :document/sentences ?s]
@@ -50,7 +50,7 @@
                   count-query {:find  '[(count ?d)]
                                :where '[[?d :document/id]]}
                   result (xt/q (xt/db node) query)]
-              (ok {:docs  (mapv (fn [[id name scount tcount xgr ugr hgr :as vals]]
+              (ok {:docs  (mapv (fn [[_ id name scount tcount xgr ugr hgr :as vals]]
                                   {:id             id
                                    :name           name
                                    :sentence_count scount
