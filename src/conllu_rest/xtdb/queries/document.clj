@@ -24,6 +24,25 @@
            (coll? x) (+ acc (count x))
            :else (+ acc 1)))))
 
+(defn calculate-probas-stats [node document-id anno-type]
+  (let [query {:find  '[?probas]
+               :where ['[?d :document/sentences ?s]
+                       '[?s :sentence/tokens ?t]
+                       ['?t (keyword "token" anno-type) '?a]
+                       ['?a (keyword anno-type "probas") '?probas]]
+               :in    ['?d]}
+        results (xt/q (xt/db node) query document-id)
+        top-probas (->> results
+                        (map (fn [[probas]]
+                               (->> probas
+                                    (sort-by second)
+                                    last
+                                    second))))]
+    (if (= 0 (count results))
+      nil
+      (/ (reduce + top-probas)
+         (count top-probas)))))
+
 (defn calculate-stats [node document-id]
   (let [query {:find  '[(count ?s) (count-contents ?t)
                         (count-contents ?xpos-gold)
@@ -68,11 +87,14 @@
                :in    '[?id]}]
     (let [res (xt/q (xt/db node) query document-id)
           [scount tcount xgr ugr hgr] (first res)
-          stats {:document/*sentence-count scount
-                 :document/*token-count    tcount
-                 :document/*xpos-gold-rate (/ xgr tcount)
-                 :document/*upos-gold-rate (/ ugr tcount)
-                 :document/*head-gold-rate (/ hgr tcount)}]
+          stats {:document/*sentence-count      scount
+                 :document/*token-count         tcount
+                 :document/*xpos-gold-rate      (/ xgr tcount)
+                 :document/*upos-gold-rate      (/ ugr tcount)
+                 :document/*head-gold-rate      (/ hgr tcount)
+                 :document/*xpos-mean-top-proba (calculate-probas-stats node document-id "xpos")
+                 :document/*upos-mean-top-proba (calculate-probas-stats node document-id "upos")
+                 :document/*head-mean-top-proba (calculate-probas-stats node document-id "head")}]
       (when-not (= 1 (count res))
         (throw (ex-info "ID produced a result set that did not have exactly one member!" {:document-id document-id})))
       (cxe/put node (merge (cxe/entity node document-id) stats)))))
