@@ -39,7 +39,7 @@
                                     last
                                     second))))]
     (if (= 0 (count results))
-      nil
+      -1
       (/ (reduce + top-probas)
          (count top-probas)))))
 

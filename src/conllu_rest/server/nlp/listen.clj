@@ -43,6 +43,15 @@
                :document/id)
        (> (count tx-ops) 100)))
 
+(defn notify-agents [node agent-map sentence-ids]
+  (doseq [[anno-type agent] agent-map]
+    (let [already-queued (nlpc/get-sentence-ids-to-process node anno-type)]
+      (doseq [sentence-id sentence-ids]
+        (when-not (already-queued sentence-id)
+          (log/info "Notifying agent" (get-in @agent [:config :anno-type]) "of change to" sentence-id)
+          (nlpc/submit-job node anno-type sentence-id)
+          (send-off agent nlpc/predict-prob-dists node sentence-id))))))
+
 (defn xtdb-listen
   "Called after a transaction is processed. Examines the transaction that was just committed, and
   infers affected sentence IDs from them. Writes the sentence IDs to a durable queue and notifies
@@ -65,16 +74,7 @@
                                          :in    ['?s]}
                                         sentence-id))]
           (cxqd/calculate-stats node document-id)))
-      (doseq [[anno-type agent] agent-map]
-        (let [already-queued (nlpc/get-sentence-ids-to-process node anno-type)]
-          (doseq [sentence-id sentence-ids]
-            (do
-              (println already-queued)
-              (println sentence-id)
-              (when-not (already-queued sentence-id)
-                (log/info "Notifying agent" (get-in @agent [:config :anno-type]) "of change to" sentence-id)
-                (nlpc/submit-job node anno-type sentence-id)
-                (send-off agent nlpc/predict-prob-dists node sentence-id)))))))))
+      (notify-agents node agent-map sentence-ids))))
 
 (defn assign-jobs [node agent-map]
   (doseq [[anno-type agent] agent-map]

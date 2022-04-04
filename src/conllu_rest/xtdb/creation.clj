@@ -12,7 +12,8 @@
             [conllu-rest.xtdb.queries.document :as cxqd]
             [conllu-rest.conllu-parser :refer [parse-conllu-string]]
             [xtdb.api :as xt]
-            [clojure.tools.logging :as log])
+            [clojure.tools.logging :as log]
+            [conllu-rest.server.nlp.listen :as nlpl])
   (:import (java.util UUID)))
 
 ;; TODO:
@@ -175,30 +176,31 @@
         document-tx (cxe/put* document)
         final-tx (reduce into [document-tx] sentence-txs)]
 
-    final-tx))
+    [final-tx sentence-ids]))
 
 (defn create-document
   "Call build-document and use its output to submit to a xtdb node"
   [xtdb-node document]
-  (let [transactions (build-document document)]
+  (let [[transactions _] (build-document document)]
     (cxe/submit-tx-sync xtdb-node transactions)
-    (cxqd/calculate-stats xtdb-node (-> transactions first second :document/id))))
+    #_(cxqd/calculate-stats xtdb-node (-> transactions first second :document/id))))
 
 (defn ingest-conllu-file
   "Given a system filepath, ingest it by reading it, parsing it, calling build-document on it,
   and submitting it to xtdb. Note that this does not call xt/await-tx on the transaction, meaning
   there are no guarantees about whether the changes will be indexed."
-  [xtdb-node filepath]
+  [xtdb-node agent-map filepath]
   (let [parsed (->> filepath
                     slurp
                     parse-conllu-string)
-        transactions (build-document parsed)]
+        [transactions sentence-ids] (build-document parsed)]
     (xt/await-tx xtdb-node (xt/submit-tx xtdb-node transactions))
-    (cxqd/calculate-stats xtdb-node (-> transactions first second :document/id))
+    (nlpl/notify-agents xtdb-node agent-map sentence-ids)
+
     (log/info "Processed" (-> parsed first :metadata (->> (into {})) (get "newdoc id")))))
 
 (defn ingest-conllu-files
   "Call ingest-conllu-file on a seq of filepaths."
-  [xtdb-node filepaths]
-  (doall (pmap (partial ingest-conllu-file xtdb-node) filepaths)))
+  [xtdb-node agent-map filepaths]
+  (mapv (partial ingest-conllu-file xtdb-node agent-map) filepaths))
 

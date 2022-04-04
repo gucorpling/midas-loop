@@ -10,6 +10,7 @@
             [xtdb.api :as xt]
             [conllu-rest.server.config :refer [env]]
             [conllu-rest.server.xtdb :refer [xtdb-node]]
+            [conllu-rest.server.nlp :refer [agent-map]]
             [conllu-rest.xtdb.creation :refer [ingest-conllu-files]]
             [conllu-rest.xtdb.serialization :refer [serialize-document]]
             [conllu-rest.server.http]
@@ -47,7 +48,7 @@
                               (conj filepaths x)))
                           []
                           (:filepaths args))]
-    (ingest-conllu-files xtdb-node filepaths)
+    (ingest-conllu-files xtdb-node agent-map filepaths)
     (log/info (str "Successfully imported " (count filepaths) " documents:"))
     (println "\nBegin document manifest:\n")
     (doseq [name filepaths]
