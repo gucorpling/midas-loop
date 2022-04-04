@@ -176,12 +176,12 @@
         document-tx (cxe/put* document)
         final-tx (reduce into [document-tx] sentence-txs)]
 
-    [final-tx sentence-ids]))
+    [final-tx sentence-ids document-id]))
 
 (defn create-document
   "Call build-document and use its output to submit to a xtdb node"
   [xtdb-node document]
-  (let [[transactions _] (build-document document)]
+  (let [[transactions _ _] (build-document document)]
     (cxe/submit-tx-sync xtdb-node transactions)
     #_(cxqd/calculate-stats xtdb-node (-> transactions first second :document/id))))
 
@@ -193,9 +193,11 @@
   (let [parsed (->> filepath
                     slurp
                     parse-conllu-string)
-        [transactions sentence-ids] (build-document parsed)]
+        [transactions sentence-ids document-id] (build-document parsed)]
     (xt/await-tx xtdb-node (xt/submit-tx xtdb-node transactions))
-    (nlpl/notify-agents xtdb-node agent-map sentence-ids)
+    (if-not (empty? agent-map)
+      (nlpl/notify-agents xtdb-node agent-map sentence-ids)
+      (cxqd/calculate-stats xtdb-node document-id))
 
     (log/info "Processed" (-> parsed first :metadata (->> (into {})) (get "newdoc id")))))
 

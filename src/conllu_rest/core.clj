@@ -53,10 +53,7 @@
     (println "\nBegin document manifest:\n")
     (doseq [name filepaths]
       (println (str "\t- " name)))
-    (println "\nEnd document manifest.\n")
-    (log/info (str "NOTE: the next time you run this server, there will be a noticeable "
-                   "delay as the database will need to index all the documents that were "
-                   "just ingested. Keep your server running and it will finish eventually."))))
+    (println "\nEnd document manifest.\n")))
 
 (defn export [args]
   (mount/start-with-args args)
