@@ -59,7 +59,7 @@
                   count-query {:find  '[(count ?d)]
                                :where '[[?d :document/id]]}
                   result (xt/q (xt/db node) query)]
-              (ok {:docs  (mapv (fn [[_ id name scount tcount xgr ugr hgr xmtp umtp hmtp :as vals]]
+              (ok {:docs  (mapv (fn [[_ id name tcount scount xgr ugr hgr xmtp umtp hmtp :as vals]]
                                   {:id                  id
                                    :name                name
                                    :sentence_count      scount
