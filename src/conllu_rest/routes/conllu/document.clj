@@ -67,9 +67,9 @@
                                    :xpos_gold_rate      xgr
                                    :upos_gold_rate      ugr
                                    :head_gold_rate      hgr
-                                   :xpos_mean_top_proba xmtp
-                                   :upos_mean_top_proba umtp
-                                   :head_mean_top_proba hmtp})
+                                   :xpos_mean_top_proba (if (= -1 xmtp) nil xmtp)
+                                   :upos_mean_top_proba (if (= -1 umtp) nil umtp)
+                                   :head_mean_top_proba (if (= -1 hmtp) nil hmtp)})
                                 result)
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
 
