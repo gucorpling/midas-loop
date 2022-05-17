@@ -1,16 +1,16 @@
 (ns user
   "Userspace functions you can run by default in your local REPL."
   (:require [clojure.tools.namespace.repl :as tools-ns]
-            [conllu-rest.server.config :as config]
-            [conllu-rest.server.xtdb :as xtdb]
-            [conllu-rest.server.repl]
+            [midas-loop.server.config :as config]
+            [midas-loop.server.xtdb :as xtdb]
+            [midas-loop.server.repl]
             [clojure.pprint]
             [clojure.spec.alpha :as s]
             [expound.alpha :as expound]
             [mount.core :as mount]
-            [conllu-rest.xtdb.easy :as cxe]
+            [midas-loop.xtdb.easy :as cxe]
             [xtdb.api :as xt]
-            [conllu-rest.core :refer [start-app]]))
+            [midas-loop.core :refer [start-app]]))
 
 (tools-ns/set-refresh-dirs "src")
 
@@ -22,14 +22,14 @@
   "Starts application.
   You'll usually want to run this on startup."
   []
-  (let [result (mount/start-without #'conllu-rest.server.repl/repl-server)]
+  (let [result (mount/start-without #'midas-loop.server.repl/repl-server)]
     (def node xtdb/xtdb-node)
     result))
 
 (defn stop
   "Stops application."
   []
-  (mount/stop-except #'conllu-rest.server.repl/repl-server))
+  (mount/stop-except #'midas-loop.server.repl/repl-server))
 
 (defn restart
   "Restarts application."

@@ -1,4 +1,4 @@
-(defproject conllu-rest "0.1.0-SNAPSHOT"
+(defproject midas-loop "0.1.0-SNAPSHOT"
 
   :description "FIXME: write description"
   :url "http://example.com/FIXME"
@@ -45,14 +45,14 @@
   :test-paths ["test"]
   :resource-paths ["resources"]
   :target-path "target/%s/"
-  :main ^:skip-aot conllu-rest.core
+  :main ^:skip-aot midas-loop.core
 
   :plugins []
 
   :profiles
   {:uberjar       {:omit-source    true
                    :aot            :all
-                   :uberjar-name   "conllu-rest.jar"
+                   :uberjar-name   "midas-loop.jar"
                    :source-paths   ["env/prod/clj"]
                    :resource-paths ["env/prod/resources"]}
 

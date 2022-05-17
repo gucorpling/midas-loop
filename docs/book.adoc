@@ -1,5 +1,5 @@
-= conllu-rest
-:author: Luke Gessler
+= Midas Loop
+:author: Luke Gessler, Lauren Levine, Amir Zeldes
 :lang: en
 :encoding: UTF-8
 :doctype: book
@@ -55,7 +55,7 @@ export, e            Export all documents in the database as CoNLL-U files.
 token, t             Token-related helpers.
 ```
 
-Run one of the top level commands (e.g. `java -jar conllu-rest.jar import --help`) to see more details about each command.
+Run one of the top level commands (e.g. `java -jar midas-loop.jar import --help`) to see more details about each command.
 
 IMPORTANT: Each command requires that your server not be running.
 If you are running your server using the `run` command, be sure you shut it down before running any of the other commands.
@@ -66,7 +66,7 @@ Token-based authorization is used.
 Each user should have a token made for them, like so:
 
 ```
-java -jar conllu-rest.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"
+java -jar midas-loop.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"
 ```
 
 Give your user their token and instruct them to keep it secret.
@@ -74,33 +74,33 @@ Give your user their token and instruct them to keep it secret.
 NOTE: Tokens that will be used by humans should have `gold` quality, and tokens that will be used by models should have `silver` quality.
 
 === Listing
-You can see all valid tokens with `java -jar conllu-rest.jar token list`.
+You can see all valid tokens with `java -jar midas-loop.jar token list`.
 
 === Revoking
 You can revoke a token like so:
 
 ```
-java -jar conllu-rest.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"
+java -jar midas-loop.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"
 ```
 
 == NLP Services
-See https://github.com/lgessler/conllu-rest/blob/master/services/sample_xpos.py[`services/sample_xpos.py`] for a sample service.
+See https://github.com/lgessler/midas-loop/blob/master/services/sample_xpos.py[`services/sample_xpos.py`] for a sample service.
 Only XPOS, UPOS, and HEAD are currently supported.
 
 == Configuration
-By default, the uberjar will use its copy of the config located at https://github.com/lgessler/conllu-rest/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
+By default, the uberjar will use its copy of the config located at https://github.com/lgessler/midas-loop/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
 If you wish to customize this, specify another config using `-Dconf=...`:
 
-`java -Dconf="/path/to/my/config.edn" -jar conllu-rest.jar ...`
+`java -Dconf="/path/to/my/config.edn" -jar midas-loop.jar ...`
 
 Config keys:
 
 [cols="1,1"]
 |===
-|`:conllu-rest.server.xtdb/config`
+|`:midas-loop.server.xtdb/config`
 |Should be a map with two subkeys: `:main-db-dir` (required) has a string specifying the main database's path on the filesystem relative to the CWD; `:http-server-port`, if present, should be a number specifying the port on which to serve XTDB's internal HTTP interface.
 
-|`:conllu-rest.server.tokens/config`
+|`:midas-loop.server.tokens/config`
 |Map with a single key, `:token-db-dir`, (required) which specifies the location on the filepath of the authorization token database.
 
 |`:dev`
@@ -122,7 +122,7 @@ Localhost and the main origin are always allowed regardless of this item's value
 
 = Operation
 == Importing
-`java -jar conllu-rest.jar import dir/with/conllu-files/`
+`java -jar midas-loop.jar import dir/with/conllu-files/`
 
 == API
 Run your server and see `/swagger-ui/`.
