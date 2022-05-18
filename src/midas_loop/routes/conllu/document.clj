@@ -41,7 +41,7 @@
             (bad-request (str "order-by parameter must be one of the following: " sort-set))
 
             :else
-            (let [query {:find     '[(distinct ?d) ?id ?dn ?tc ?sc ?xgr ?ugr ?hgr ?xmtp ?umtp ?hmtp]
+            (let [query {:find     '[(distinct ?d) ?id ?dn ?tc ?sc ?xgr ?ugr ?hgr ?xmtp ?umtp ?hmtp ?smtp]
                          :where    '[[?d :document/id ?id]
                                      [?d :document/name ?dn]
                                      [?d :document/sentences ?s]
@@ -52,14 +52,15 @@
                                      [?d :document/*head-gold-rate ?hgr]
                                      [?d :document/*xpos-mean-top-proba ?xmtp]
                                      [?d :document/*upos-mean-top-proba ?umtp]
-                                     [?d :document/*head-mean-top-proba ?hmtp]]
+                                     [?d :document/*head-mean-top-proba ?hmtp]
+                                     [?d :document/*sentence-mean-top-proba ?smtp]]
                          :order-by [(sort-map order-by)]
                          :limit    limit
                          :offset   offset}
                   count-query {:find  '[(count ?d)]
                                :where '[[?d :document/id]]}
                   result (xt/q (xt/db node) query)]
-              (ok {:docs  (mapv (fn [[_ id name tcount scount xgr ugr hgr xmtp umtp hmtp :as vals]]
+              (ok {:docs  (mapv (fn [[_ id name tcount scount xgr ugr hgr xmtp umtp hmtp smtp :as vals]]
                                   {:id                  id
                                    :name                name
                                    :sentence_count      scount
@@ -69,7 +70,8 @@
                                    :head_gold_rate      hgr
                                    :xpos_mean_top_proba (if (= -1 xmtp) nil xmtp)
                                    :upos_mean_top_proba (if (= -1 umtp) nil umtp)
-                                   :head_mean_top_proba (if (= -1 hmtp) nil hmtp)})
+                                   :head_mean_top_proba (if (= -1 hmtp) nil hmtp)
+                                   :sentence_mean_top_proba (if (= -1 smtp) nil smtp)})
                                 result)
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
 

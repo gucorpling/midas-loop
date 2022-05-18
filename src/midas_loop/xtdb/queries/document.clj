@@ -43,6 +43,24 @@
       (/ (reduce + top-probas)
          (count top-probas)))))
 
+(defn calculate-sentence-probas-stats [node document-id]
+  (let [query {:find  '[?probas]
+               :where ['[?d :document/sentences ?s]
+                       '[?s :sentence/tokens ?t]
+                       '[?t :sentence/probas ?probas]]
+               :in    ['?d]}
+        results (xt/q (xt/db node) query document-id)
+        top-probas (->> results
+                        (map (fn [[probas]]
+                               (->> probas
+                                    (sort-by second)
+                                    last
+                                    second))))]
+    (if (= 0 (count results))
+      -1
+      (/ (reduce + top-probas)
+         (count top-probas)))))
+
 (defn calculate-stats [node document-id]
   (let [query {:find  '[(count ?s) (count-contents ?t)
                         (count-contents ?xpos-gold)
@@ -94,7 +112,8 @@
                  :document/*head-gold-rate      (/ hgr tcount)
                  :document/*xpos-mean-top-proba (calculate-probas-stats node document-id "xpos")
                  :document/*upos-mean-top-proba (calculate-probas-stats node document-id "upos")
-                 :document/*head-mean-top-proba (calculate-probas-stats node document-id "head")}]
+                 :document/*head-mean-top-proba (calculate-probas-stats node document-id "head")
+                 :document/*sentence-mean-top-proba (calculate-sentence-probas-stats node document-id)}]
       (when-not (= 1 (count res))
         (throw (ex-info "ID produced a result set that did not have exactly one member!" {:document-id document-id})))
       (cxe/put node (merge (cxe/entity node document-id) stats)))))
