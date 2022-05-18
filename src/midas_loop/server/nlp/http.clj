@@ -37,21 +37,33 @@
                                              id
                                              v)))))))))
 
-(defn validate [{:sentence/keys [tokens id] :as sentence} data]
+(defn validate [anno-type {:sentence/keys [tokens id] :as sentence} data]
   (if (nil? sentence)
     {:status :dne}
-    (let [tokens (filterv #(not= :super (:token/token-type %)) tokens)]
+    ;; Sentence split probas: only for plain tokens
+    ;; Other probas: for all but supertokens
+    (let [tokens (if (= :sentence anno-type)
+                   (filterv #(= :token (:token/token-type %)) tokens)
+                   (filterv #(not= :super (:token/token-type %)) tokens))]
       (if-let [parsed-data (parse-response data id (count tokens))]
         {:status :ok :data parsed-data}
         {:status :bad-data}))))
+
+(defmulti probas-entity (fn [node key id] key))
+(defmethod probas-entity :default [node key id]
+  (let [db (xt/db node)
+        token (xt/entity db id)]
+    (xt/entity db ((keyword "token" (namespace key)) token))))
+(defmethod probas-entity :sentence/probas [node key id]
+  (let [db (xt/db node)]
+    (xt/entity db id)))
 
 (cxe/deftx -write-probas [node key token-probas-pairs]
   (let [db (xt/db node)
         anno-type (namespace key)
         tx (mapv (fn [[{:token/keys [id]} probas]]
                    ;; todo: actually need to fetch the anno record
-                   (let [token (xt/entity db id)
-                         anno (xt/entity db ((keyword "token" anno-type) token))]
+                   (let [anno (probas-entity node key id)]
                      (-> anno
                          (assoc key probas)
                          cxe/put*)))
@@ -59,7 +71,7 @@
     tx))
 
 (defn write-probas [node key token-probas-pairs]
-  (when-not (#{:xpos/probas :upos/probas :head/probas} key)
+  (when-not (#{:sentence/probas :xpos/probas :upos/probas :head/probas} key)
     (throw (ex-info "Invalid probas key:" {:key key})))
   (-write-probas node key token-probas-pairs))
 
@@ -96,7 +108,7 @@
 
               :else
               (let [{:sentence/keys [tokens] :as sentence} (cxq/pull2 node :sentence/id sentence-id)
-                    {:keys [status data]} (validate sentence body)]
+                    {:keys [status data]} (validate anno-type sentence body)]
                 (case status
                   :dne
                   (do (log/info "Sentence" sentence-id "doesn't exist! Considering job complete.")

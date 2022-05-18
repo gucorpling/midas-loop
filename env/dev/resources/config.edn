@@ -4,4 +4,5 @@
  :midas-loop.server.tokens/config
  {:token-db-dir "xtdb_token_data"}
  :dev          true
- :nlp-services [{:type :http :anno-type :xpos :url "http://localhost:5555"}]}
+ :nlp-services [{:type :http :anno-type :xpos :url "http://localhost:5555"}
+                {:type :http :anno-type :sentence :url "http://localhost:5556"}]}
