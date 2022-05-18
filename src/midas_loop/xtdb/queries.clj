@@ -34,6 +34,7 @@
                :token/token-type
                :token/subtokens
                :sentence/probas
+               :sentence/quality
                {:token/form (get-pull-fragment :form/id)}
                {:token/lemma (get-pull-fragment :lemma/id)}
                {:token/upos (get-pull-fragment :upos/id)}

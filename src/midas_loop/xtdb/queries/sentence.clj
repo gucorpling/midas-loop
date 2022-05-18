@@ -60,6 +60,7 @@
         :else
         (let [left-tokens (remove-after tokens token-id)
               right-tokens (take-from tokens token-id)
+              first-right-token (cxe/entity node token-id)
               updated-sentence (-> sentence
                                    (assoc :sentence/tokens left-tokens))
               new-sentence-id (UUID/randomUUID)
@@ -73,7 +74,8 @@
                                    (update :document/sentences insert-after sentence-id new-sentence-id))
               txs [(cxe/put* updated-sentence)
                    (cxe/put* new-sentence-record)
-                   (cxe/put* updated-document)]
+                   (cxe/put* updated-document)
+                   (cxe/put* (assoc first-right-token :sentence/quality "gold"))]
               txs (concat txs (cxq/remove-invalid-deps** node left-tokens) (cxq/remove-invalid-deps** node right-tokens))]
           (if (cxe/submit-tx-sync node txs)
             (assoc (write-ok) :new-sentence-id new-sentence-id)
@@ -100,7 +102,9 @@
         (write-error (str "No sentence to merge that follows sentence: " sentence-id))
 
         :else
-        (let [other-sentence-id (get sentences (inc (find-index sentences sentence-id)))
+        (let [{right-token-ids :sentence/tokens} (cxe/entity node sentence-id)
+              first-right-token (cxe/entity node (first right-token-ids))
+              other-sentence-id (get sentences (inc (find-index sentences sentence-id)))
               other-sentence (cxe/entity node other-sentence-id)
               new-sentence-list (vec (remove #(= % other-sentence-id) sentences))
               updated-document-record (-> document
@@ -110,7 +114,8 @@
               ;; TODO: keep any meta from the other sentence?
               txs [(cxe/put* updated-document-record)
                    (cxe/put* updated-sentence-record)
-                   (cxe/delete* other-sentence-id)]]
+                   (cxe/delete* other-sentence-id)
+                   (cxe/put* (assoc first-right-token :sentence/quality "gold"))]]
 
           (if (cxe/submit-tx-sync node txs)
             (write-ok)
