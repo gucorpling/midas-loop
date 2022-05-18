@@ -1,3 +1,4 @@
+import random
 from collections.abc import Iterable
 import json
 from flask import Flask, request
@@ -31,16 +32,8 @@ def tag_conllu(conllu_sentence: str) -> List[List[Tuple[str, float]]]:
     sentence = [t for t in sentence if is_plain_token(t)]
     labels = []
     for i, t in enumerate(sentence):
-        softmax = {"B": 0.0, "O": 1.0}
-        if i % 3 == 0:
-            softmax["B"] = 0.95
-            softmax["O"] = 0.05
-        elif i % 3 == 1:
-            softmax["B"] = 0.05
-            softmax["O"] = 0.95
-        elif i % 3 == 2:
-            softmax["B"] = 0.50
-            softmax["O"] = 0.50
+        v = random.choice((16*[0.01]) + [0.12, 0.98, 0.9, 0.88])
+        softmax = {"B": v, "O": 1. - v}
         labels.append(softmax)
 
     return labels
