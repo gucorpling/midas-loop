@@ -5,9 +5,9 @@
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="generator" content="Asciidoctor 2.0.16">
-<meta name="author" content="Luke Gessler">
+<meta name="author" content="Luke Gessler, Lauren Levine, Amir Zeldes">
 <link rel="icon" type="image/x-icon" href="favicon.ico">
-<title>conllu-rest</title>
+<title>Midas Loop</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700">
 <style>
 /*! Asciidoctor default stylesheet | MIT License | https://asciidoctor.org */
@@ -441,9 +441,9 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </head>
 <body class="book toc2 toc-left">
 <div id="header">
-<h1>conllu-rest</h1>
+<h1>Midas Loop</h1>
 <div class="details">
-<span id="author" class="author">Luke Gessler</span><br>
+<span id="author" class="author">Luke Gessler, Lauren Levine, Amir Zeldes</span><br>
 </div>
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
@@ -467,7 +467,13 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_revoking">3.2.3. Revoking</a></li>
 </ul>
 </li>
-<li><a href="#_nlp_services">3.3. NLP Services</a></li>
+<li><a href="#_nlp_services">3.3. NLP Services</a>
+<ul class="sectlevel3">
+<li><a href="#_inputs">3.3.1. Inputs</a></li>
+<li><a href="#_outputs">3.3.2. Outputs</a></li>
+<li><a href="#_example">3.3.3. Example</a></li>
+</ul>
+</li>
 <li><a href="#_configuration">3.4. Configuration</a></li>
 </ul>
 </li>
@@ -554,7 +560,7 @@ token, t             Token-related helpers.</code></pre>
 </div>
 </div>
 <div class="paragraph">
-<p>Run one of the top level commands (e.g. <code>java -jar conllu-rest.jar import --help</code>) to see more details about each command.</p>
+<p>Run one of the top level commands (e.g. <code>java -jar midas-loop.jar import --help</code>) to see more details about each command.</p>
 </div>
 <div class="admonitionblock important">
 <table>
@@ -580,7 +586,7 @@ Each user should have a token made for them, like so:</p>
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code>java -jar conllu-rest.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"</code></pre>
+<pre class="highlight"><code>java -jar midas-loop.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"</code></pre>
 </div>
 </div>
 <div class="paragraph">
@@ -602,7 +608,7 @@ Tokens that will be used by humans should have <code>gold</code> quality, and to
 <div class="sect3">
 <h4 id="_listing"><a class="anchor" href="#_listing"></a><a class="link" href="#_listing">3.2.2. Listing</a></h4>
 <div class="paragraph">
-<p>You can see all valid tokens with <code>java -jar conllu-rest.jar token list</code>.</p>
+<p>You can see all valid tokens with <code>java -jar midas-loop.jar token list</code>.</p>
 </div>
 </div>
 <div class="sect3">
@@ -612,7 +618,7 @@ Tokens that will be used by humans should have <code>gold</code> quality, and to
 </div>
 <div class="listingblock">
 <div class="content">
-<pre class="highlight"><code>java -jar conllu-rest.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"</code></pre>
+<pre class="highlight"><code>java -jar midas-loop.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"</code></pre>
 </div>
 </div>
 </div>
@@ -620,18 +626,65 @@ Tokens that will be used by humans should have <code>gold</code> quality, and to
 <div class="sect2">
 <h3 id="_nlp_services"><a class="anchor" href="#_nlp_services"></a><a class="link" href="#_nlp_services">3.3. NLP Services</a></h3>
 <div class="paragraph">
-<p>See <a href="https://github.com/lgessler/conllu-rest/blob/master/services/sample_xpos.py"><code>services/sample_xpos.py</code></a> for a sample service.
-Only XPOS, UPOS, and HEAD are currently supported.</p>
+<p>Midas Loop is able to contact <em>NLP services</em> via HTTP in order to get machine learning model outputs for certain kinds of annotations.
+NLP services work by waiting to be contacted by the Midas Loop server, which will contact the service when it needs fresh label distributions for a given annotation type.</p>
+</div>
+<div class="paragraph">
+<p>Specifically, Midas Loop is able to accommodate outputs for sentence splits (i.e., token-level classification of whether a particular token is the beginning of a new sentence) as well as UPOS, XPOS, and HEAD annotations.
+For each of these annotation types, it is expected that a service will be able to take a sentence as input and provide a list of <em>probability distribution</em> over labels, one distribution per token.</p>
+</div>
+<div class="sect3">
+<h4 id="_inputs"><a class="anchor" href="#_inputs"></a><a class="link" href="#_inputs">3.3.1. Inputs</a></h4>
+<div class="paragraph">
+<p>The service should be listening for POST requests at <code>/</code>, and can expect that the JSON payload will include the keys <code>conllu</code> and <code>json</code>: the <code>conllu</code> key will have the stringified CoNLL-U representation of the sentence, and the <code>json</code> key will have Midas Loop&#8217;s verbose internal representation of the sentence.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_outputs"><a class="anchor" href="#_outputs"></a><a class="link" href="#_outputs">3.3.2. Outputs</a></h4>
+<div class="paragraph">
+<p>The service should respond with a JSON in the response body with a single key, <code>probabilities</code>.
+The value associated with this key should be a list of objects (= Python dicts) where each object holds key-value pairs expressing labels' probabilities as predicted by the model for the corresponding token at that position.
+Values should sum to 1.</p>
+</div>
+<div class="paragraph">
+<p>For any input sentence, the number of output label distributions must <strong>exactly</strong> match the expected numbers.
+For UPOS, XPOS, and HEAD, this is the number of normal tokens or ellipsis tokens, and for sentence splits, this is the number of normal tokens.
+Model outputs will be rejected if the expected number of label distributions is not met.</p>
+</div>
+<div class="paragraph">
+<p>Note that for HEAD, values <strong>must</strong> be the internal IDs for tokens provided in the <code>json</code> input representation, i.e. UUIDs such as <code>013769d9-dc90-4278-9bc2-5d6a9f96d0fc</code> instead of CoNLL-U IDs like <code>3</code> or <code>11.2</code>.</p>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+Be sure that you are using the ID for the <strong>token</strong> entity in the JSON, and not the <strong>head</strong> entity in the JSON, when providing your outputs.
+</td>
+</tr>
+</table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_example"><a class="anchor" href="#_example"></a><a class="link" href="#_example">3.3.3. Example</a></h4>
+<div class="paragraph">
+<p>Consider a sample XPOS tagging service at <a href="https://github.com/lgessler/midas-loop/blob/master/services/sample_xpos.py"><code>services/sample_xpos.py</code></a>.
+This is a barebones HTTP service implemented using Flask which loads a pretrained English part of speech tagger from spaCy and uses it to respond to requests.
+It listens for a POST request, and when it receives it, uses the model to parse the CoNLL-U string and recover the probabilities from the model&#8217;s outputs.
+Note that the model is initialized globally so that it may reside in memory in between requests.</p>
+</div>
 </div>
 </div>
 <div class="sect2">
 <h3 id="_configuration"><a class="anchor" href="#_configuration"></a><a class="link" href="#_configuration">3.4. Configuration</a></h3>
 <div class="paragraph">
-<p>By default, the uberjar will use its copy of the config located at <a href="https://github.com/lgessler/conllu-rest/blob/master/env/prod/resources/config.edn"><code>env/prod/resources/config.edn</code></a>.
+<p>By default, the uberjar will use its copy of the config located at <a href="https://github.com/lgessler/midas-loop/blob/master/env/prod/resources/config.edn"><code>env/prod/resources/config.edn</code></a>.
 If you wish to customize this, specify another config using <code>-Dconf=&#8230;&#8203;</code>:</p>
 </div>
 <div class="paragraph">
-<p><code>java -Dconf="/path/to/my/config.edn" -jar conllu-rest.jar &#8230;&#8203;</code></p>
+<p><code>java -Dconf="/path/to/my/config.edn" -jar midas-loop.jar &#8230;&#8203;</code></p>
 </div>
 <div class="paragraph">
 <p>Config keys:</p>
@@ -643,11 +696,11 @@ If you wish to customize this, specify another config using <code>-Dconf=&#8230;
 </colgroup>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:conllu-rest.server.xtdb/config</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:midas-loop.server.xtdb/config</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Should be a map with two subkeys: <code>:main-db-dir</code> (required) has a string specifying the main database&#8217;s path on the filesystem relative to the CWD; <code>:http-server-port</code>, if present, should be a number specifying the port on which to serve XTDB&#8217;s internal HTTP interface.</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:conllu-rest.server.tokens/config</code></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><code>:midas-loop.server.tokens/config</code></p></td>
 <td class="tableblock halign-left valign-top"><p class="tableblock">Map with a single key, <code>:token-db-dir</code>, (required) which specifies the location on the filepath of the authorization token database.</p></td>
 </tr>
 <tr>
@@ -656,7 +709,7 @@ If you wish to customize this, specify another config using <code>-Dconf=&#8230;
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>:nlp-services</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">A vector of three-key maps. Each map should have a <code>:type</code> (currently always <code>:http</code>), a <code>:anno-type</code> (must be <code>:xpos</code>, <code>:upos</code>, or <code>:head</code>), and a url (must be pointed at a running <a href="#_nlp_services">NLP Services</a>)</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">A vector of three-key maps. Each map should have a <code>:type</code> (currently always <code>:http</code>), a <code>:anno-type</code> (must be <code>:sentence</code>, <code>:xpos</code>, <code>:upos</code>, or <code>:head</code>), and a url (must be pointed at running <a href="#_nlp_services">NLP Services</a>)</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>:nlp-retry-wait-period-ms</code></p></td>
@@ -664,7 +717,7 @@ If you wish to customize this, specify another config using <code>-Dconf=&#8230;
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>:port</code></p></td>
-<td class="tableblock halign-left valign-top"><p class="tableblock">Port used for the main web server. Must be a number.</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">Port used for the main web server.</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p class="tableblock"><code>:cors-patterns</code></p></td>
@@ -682,7 +735,7 @@ Localhost and the main origin are always allowed regardless of this item&#8217;s
 <div class="sect2">
 <h3 id="_importing"><a class="anchor" href="#_importing"></a><a class="link" href="#_importing">4.1. Importing</a></h3>
 <div class="paragraph">
-<p><code>java -jar conllu-rest.jar import dir/with/conllu-files/</code></p>
+<p><code>java -jar midas-loop.jar import dir/with/conllu-files/</code></p>
 </div>
 </div>
 <div class="sect2">
@@ -707,7 +760,7 @@ Localhost and the main origin are always allowed regardless of this item&#8217;s
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-03-29 20:19:44 -0400
+Last updated 2022-05-18 23:13:16 -0400
 </div>
 </div>
 </body>
