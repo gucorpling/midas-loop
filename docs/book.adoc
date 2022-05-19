@@ -102,7 +102,11 @@ For any input sentence, the number of output label distributions must *exactly* 
 For UPOS, XPOS, and HEAD, this is the number of normal tokens or ellipsis tokens, and for sentence splits, this is the number of normal tokens.
 Model outputs will be rejected if the expected number of label distributions is not met.
 
-Note that for HEAD, values *must* be the internal IDs for tokens provided in the `json` input representation, i.e. UUIDs such as `013769d9-dc90-4278-9bc2-5d6a9f96d0fc` instead of CoNLL-U IDs like `3` or `11.2`.
+==== Label Value Requirements
+For UPOS and XPOS, any label is acceptable, but HEAD and sentence splits require careful attention to labels:
+
+* For HEAD, labels *must* be the internal IDs for tokens provided in the `json` input representation, i.e. UUIDs such as `013769d9-dc90-4278-9bc2-5d6a9f96d0fc` instead of CoNLL-U IDs like `3` or `11.2`.
+* For sentence splits, labels *must* be either `B` or `O`, where `B` indicates the beginning of a new sentence.
 
 WARNING: Be sure that you are using the ID for the *token* entity in the JSON, and not the *head* entity in the JSON, when providing your outputs.
 
