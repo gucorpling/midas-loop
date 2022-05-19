@@ -652,8 +652,20 @@ Values should sum to 1.</p>
 For UPOS, XPOS, and HEAD, this is the number of normal tokens or ellipsis tokens, and for sentence splits, this is the number of normal tokens.
 Model outputs will be rejected if the expected number of label distributions is not met.</p>
 </div>
+<div class="sect4">
+<h5 id="_label_value_requirements"><a class="anchor" href="#_label_value_requirements"></a><a class="link" href="#_label_value_requirements">Label Value Requirements</a></h5>
 <div class="paragraph">
-<p>Note that for HEAD, values <strong>must</strong> be the internal IDs for tokens provided in the <code>json</code> input representation, i.e. UUIDs such as <code>013769d9-dc90-4278-9bc2-5d6a9f96d0fc</code> instead of CoNLL-U IDs like <code>3</code> or <code>11.2</code>.</p>
+<p>For UPOS and XPOS, any label is acceptable, but HEAD and sentence splits require careful attention to labels:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>For HEAD, labels <strong>must</strong> be the internal IDs for tokens provided in the <code>json</code> input representation, i.e. UUIDs such as <code>013769d9-dc90-4278-9bc2-5d6a9f96d0fc</code> instead of CoNLL-U IDs like <code>3</code> or <code>11.2</code>.</p>
+</li>
+<li>
+<p>For sentence splits, labels <strong>must</strong> be either <code>B</code> or <code>O</code>, where <code>B</code> indicates the beginning of a new sentence.</p>
+</li>
+</ul>
 </div>
 <div class="admonitionblock warning">
 <table>
@@ -666,6 +678,7 @@ Be sure that you are using the ID for the <strong>token</strong> entity in the J
 </td>
 </tr>
 </table>
+</div>
 </div>
 </div>
 <div class="sect3">
@@ -767,7 +780,7 @@ Localhost and the main origin are always allowed regardless of this item&#8217;s
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-05-18 23:22:55 -0400
+Last updated 2022-05-18 23:27:41 -0400
 </div>
 </div>
 </body>
