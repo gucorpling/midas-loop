@@ -5,4 +5,5 @@
  {:token-db-dir "xtdb_token_data"}
  :dev          true
  :nlp-services [{:type :http :anno-type :xpos :url "http://localhost:5555"}
-                {:type :http :anno-type :sentence :url "http://localhost:5556"}]}
+                {:type :http :anno-type :sentence :url "http://localhost:5556"}
+                {:type :http :anno-type :head :url "http://localhost:5557"}]}
