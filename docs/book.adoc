@@ -122,7 +122,7 @@ It listens for a POST request, and when it receives it, uses the model to parse 
 Note that the model is initialized globally so that it may reside in memory in between requests.
 
 == Configuration
-By default, the uberjar will use its copy of the config located at https://github.com/lgessler/midas-loop/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
+By default, the uberjar will use its copy of the config located at https://github.com/gucorpling/midas-loop/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
 If you wish to customize this, specify another config using `-Dconf=...`:
 
 `java -Dconf="/path/to/my/config.edn" -jar midas-loop.jar ...`
