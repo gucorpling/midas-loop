@@ -37,17 +37,19 @@
 (defn import [args]
   (binding [midas-loop.server.xtdb/*listen?* false]
     (mount/start-with-args args))
-  (let [filepaths (reduce (fn [filepaths x]
-                            (if (.isDirectory (io/file x))
-                              (into filepaths (->> (file-seq (io/file x))
-                                                   (filter #(.. %
-                                                                (toPath)
-                                                                (getFileName)
-                                                                (toString)
-                                                                (endsWith ".conllu")))))
-                              (conj filepaths x)))
-                          []
-                          (:filepaths args))]
+  (let [filepaths (->> args
+                       :filepaths
+                       (reduce (fn [filepaths x]
+                                 (if (.isDirectory (io/file x))
+                                   (into filepaths (->> (file-seq (io/file x))
+                                                        (filter #(.. %
+                                                                     (toPath)
+                                                                     (getFileName)
+                                                                     (toString)
+                                                                     (endsWith ".conllu")))))
+                                   (conj filepaths x)))
+                               [])
+                       sort)]
     (ingest-conllu-files xtdb-node agent-map filepaths)
     (log/info (str "Successfully imported " (count filepaths) " documents:"))
     (println "\nBegin document manifest:\n")
