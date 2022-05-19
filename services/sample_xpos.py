@@ -25,7 +25,7 @@ def is_plain_token(t):
     return not isinstance(t["id"], Iterable)
 
 
-def tag_conllu(conllu_sentence: str) -> List[List[Tuple[str, float]]]:
+def tag_conllu(conllu_sentence: str):
     """
     Given an English sentence in conllu format, return POS tag probabilities for each token.
     """

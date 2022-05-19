@@ -24,7 +24,7 @@ def is_plain_token(t):
     return not isinstance(t["id"], Iterable)
 
 
-def tag_conllu(conllu_sentence: str) -> List[List[Tuple[str, float]]]:
+def random_splits(conllu_sentence: str):
     """
     Given an English sentence in conllu format, return POS tag probabilities for each token.
     """
@@ -42,7 +42,7 @@ def tag_conllu(conllu_sentence: str) -> List[List[Tuple[str, float]]]:
 @app.route("/", methods=["POST"])
 def get():
     data = request.json
-    return json.dumps({"probabilities": tag_conllu(data["conllu"])})
+    return json.dumps({"probabilities": random_splits(data["conllu"])})
 
 
 SAMPLE = """# sent_id = AMALGUM_reddit_beatty-47
