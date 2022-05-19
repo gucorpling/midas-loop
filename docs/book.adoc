@@ -108,7 +108,7 @@ WARNING: Be sure that you are using the ID for the *token* entity in the JSON, a
 
 === Example
 
-Consider a sample XPOS tagging service at https://github.com/lgessler/midas-loop/blob/master/services/sample_xpos.py[`services/sample_xpos.py`].
+Consider a sample XPOS tagging service at https://github.com/gucorpling/midas-loop/blob/master/services/sample_xpos.py[`services/sample_xpos.py`].
 This is a barebones HTTP service implemented using Flask which loads a pretrained English part of speech tagger from spaCy and uses it to respond to requests.
 It listens for a POST request, and when it receives it, uses the model to parse the CoNLL-U string and recover the probabilities from the model's outputs.
 Note that the model is initialized globally so that it may reside in memory in between requests.
