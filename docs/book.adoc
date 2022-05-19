@@ -84,8 +84,34 @@ java -jar midas-loop.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEE
 ```
 
 == NLP Services
-See https://github.com/lgessler/midas-loop/blob/master/services/sample_xpos.py[`services/sample_xpos.py`] for a sample service.
-Only XPOS, UPOS, and HEAD are currently supported.
+Midas Loop is able to contact _NLP services_ via HTTP in order to get machine learning model outputs for certain kinds of annotations.
+NLP services work by waiting to be contacted by the Midas Loop server, which will contact the service when it needs fresh label distributions for a given annotation type.
+
+Specifically, Midas Loop is able to accommodate outputs for sentence splits (i.e., token-level classification of whether a particular token is the beginning of a new sentence) as well as UPOS, XPOS, and HEAD annotations.
+For each of these annotation types, it is expected that a service will be able to take a sentence as input and provide a list of _probability distribution_ over labels, one distribution per token.
+
+=== Inputs
+The service should be listening for POST requests at `/`, and can expect that the JSON payload will include the keys `conllu` and `json`: the `conllu` key will have the stringified CoNLL-U representation of the sentence, and the `json` key will have Midas Loop's verbose internal representation of the sentence.
+
+=== Outputs
+The service should respond with a JSON in the response body with a single key, `probabilities`.
+The value associated with this key should be a list of objects (= Python dicts) where each object holds key-value pairs expressing labels' probabilities as predicted by the model for the corresponding token at that position.
+Values should sum to 1.
+
+For any input sentence, the number of output label distributions must *exactly* match the expected numbers.
+For UPOS, XPOS, and HEAD, this is the number of normal tokens or ellipsis tokens, and for sentence splits, this is the number of normal tokens.
+Model outputs will be rejected if the expected number of label distributions is not met.
+
+Note that for HEAD, values *must* be the internal IDs for tokens provided in the `json` input representation, i.e. UUIDs such as `013769d9-dc90-4278-9bc2-5d6a9f96d0fc` instead of CoNLL-U IDs like `3` or `11.2`.
+
+WARNING: Be sure that you are using the ID for the *token* entity in the JSON, and not the *head* entity in the JSON, when providing your outputs.
+
+=== Example
+
+Consider a sample XPOS tagging service at https://github.com/lgessler/midas-loop/blob/master/services/sample_xpos.py[`services/sample_xpos.py`].
+This is a barebones HTTP service implemented using Flask which loads a pretrained English part of speech tagger from spaCy and uses it to respond to requests.
+It listens for a POST request, and when it receives it, uses the model to parse the CoNLL-U string and recover the probabilities from the model's outputs.
+Note that the model is initialized globally so that it may reside in memory in between requests.
 
 == Configuration
 By default, the uberjar will use its copy of the config located at https://github.com/lgessler/midas-loop/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
@@ -107,13 +133,13 @@ Config keys:
 |Either `true` or `false`. If `true`, do not require any authorization. This should always be `false` in production.
 
 |`:nlp-services`
-| A vector of three-key maps. Each map should have a `:type` (currently always `:http`), a `:anno-type` (must be `:xpos`, `:upos`, or `:head`), and a url (must be pointed at a running <<NLP Services>>)
+| A vector of three-key maps. Each map should have a `:type` (currently always `:http`), a `:anno-type` (must be `:sentence`, `:xpos`, `:upos`, or `:head`), and a url (must be pointed at running <<NLP Services>>)
 
 |`:nlp-retry-wait-period-ms`
 | Time, in milliseconds, to wait after a failure before attempting to contact an HTTP NLP service again. Defaults to `10000` (10 seconds).
 
 |`:port`
-| Port used for the main web server. Must be a number.
+| Port used for the main web server.
 
 | `:cors-patterns`
 | A set of CORS patterns (regular expressions) for adding additional allowed origins, e.g. `#{"*.georgetown.edu"}`.
