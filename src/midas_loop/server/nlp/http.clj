@@ -88,8 +88,9 @@
             (try
               ;; Parse the body manually later
               (binding [client/*current-middleware* (filterv #(not= % client/wrap-output-coercion) client/default-middleware)]
-                (client/post url {:body          (.toString (serialization/serialize-sentence node sentence-id))
-                                  :content-type  "text/plain; charset=utf-8"
+                (client/post url {:form-params {:conllu (.toString (serialization/serialize-sentence node sentence-id))
+                                                :json   (cxq/pull2 node :sentence/id sentence-id)}
+                                  :content-type :json
                                   :retry-handler retry}))
               (catch Exception e
                 (do

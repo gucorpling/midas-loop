@@ -41,8 +41,8 @@ def tag_conllu(conllu_sentence: str) -> List[List[Tuple[str, float]]]:
 
 @app.route("/", methods=["POST"])
 def get():
-    conllu_string = request.data.decode("utf-8")
-    return json.dumps({"probabilities": tag_conllu(conllu_string)})
+    data = request.json
+    return json.dumps({"probabilities": tag_conllu(data["conllu"])})
 
 
 SAMPLE = """# sent_id = AMALGUM_reddit_beatty-47
