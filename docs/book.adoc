@@ -106,6 +106,9 @@ Note that for HEAD, values *must* be the internal IDs for tokens provided in the
 
 WARNING: Be sure that you are using the ID for the *token* entity in the JSON, and not the *head* entity in the JSON, when providing your outputs.
 
+=== Service Registration
+NLP services will not be contacted unless Midas Loop is told about them. See `:nlp-services` in <<Configuration>>.
+
 === Example
 
 Consider a sample XPOS tagging service at https://github.com/gucorpling/midas-loop/blob/master/services/sample_xpos.py[`services/sample_xpos.py`].
