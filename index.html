@@ -660,10 +660,11 @@ Model outputs will be rejected if the expected number of label distributions is 
 <div class="ulist">
 <ul>
 <li>
-<p>For HEAD, labels <strong>must</strong> be the internal IDs for tokens provided in the <code>json</code> input representation, i.e. UUIDs such as <code>013769d9-dc90-4278-9bc2-5d6a9f96d0fc</code> instead of CoNLL-U IDs like <code>3</code> or <code>11.2</code>.</p>
+<p>For HEAD, labels <strong>must</strong> be the internal IDs for tokens provided in the <code>json</code> input representation, i.e. UUIDs such as <code>013769d9-dc90-4278-9bc2-5d6a9f96d0fc</code> instead of CoNLL-U IDs like <code>3</code> or <code>11.2</code>.
+The only exception is the string value <code>"root"</code>, used to indicate the root of the sentence.</p>
 </li>
 <li>
-<p>For sentence splits, labels <strong>must</strong> be either <code>B</code> or <code>O</code>, where <code>B</code> indicates the beginning of a new sentence.</p>
+<p>For sentence splits, labels <strong>must</strong> be either <code>"B"</code> or <code>"O"</code>, where <code>"B"</code> indicates the beginning of a new sentence.</p>
 </li>
 </ul>
 </div>
@@ -780,7 +781,7 @@ Localhost and the main origin are always allowed regardless of this item&#8217;s
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-05-18 23:27:41 -0400
+Last updated 2022-05-19 12:51:57 -0400
 </div>
 </div>
 </body>
