@@ -9,9 +9,12 @@
             [midas-loop.xtdb.queries :as cxq]
             [xtdb.api :as xt]
             [midas-loop.common :as common]
-            [midas-loop.xtdb.queries.document :as cxqd]))
+            [midas-loop.xtdb.queries.document :as cxqd]
+            [midas-loop.server.nlp.common :as nlpc]))
 
-(defn parse-response [data sentence-id token-count]
+(defn parse-response
+  "Process a response returned to midas loop from an NLP service."
+  [data sentence-id token-count]
   (when-let [parsed (try (json/parse-string data)
                          (catch Exception e
                            (log/error "NLP service responded with malformed JSON:" e)))]
@@ -37,7 +40,12 @@
                                              id
                                              v)))))))))
 
-(defn validate [anno-type {:sentence/keys [tokens id] :as sentence} data]
+(defn validate
+  "Given an annotation type, a sentence, and the data we got back from a service, produce a :status where:
+  - :dne means the sentence does not exist
+  - :bad-data means something was wrong about the data we got back from the service
+  - :ok means success"
+  [anno-type {:sentence/keys [tokens id] :as sentence} data]
   (if (nil? sentence)
     {:status :dne}
     ;; Sentence split probas: only for plain tokens
@@ -48,32 +56,6 @@
       (if-let [parsed-data (parse-response data id (count tokens))]
         {:status :ok :data parsed-data}
         {:status :bad-data}))))
-
-(defmulti probas-entity (fn [node key id] key))
-(defmethod probas-entity :default [node key id]
-  (let [db (xt/db node)
-        token (xt/entity db id)]
-    (xt/entity db ((keyword "token" (namespace key)) token))))
-(defmethod probas-entity :sentence/probas [node key id]
-  (let [db (xt/db node)]
-    (xt/entity db id)))
-
-(cxe/deftx -write-probas [node key token-probas-pairs]
-  (let [db (xt/db node)
-        anno-type (namespace key)
-        tx (mapv (fn [[{:token/keys [id]} probas]]
-                   ;; todo: actually need to fetch the anno record
-                   (let [anno (probas-entity node key id)]
-                     (-> anno
-                         (assoc key probas)
-                         cxe/put*)))
-                 token-probas-pairs)]
-    tx))
-
-(defn write-probas [node key token-probas-pairs]
-  (when-not (#{:sentence/probas :xpos/probas :upos/probas :head/probas} key)
-    (throw (ex-info "Invalid probas key:" {:key key})))
-  (-write-probas node key token-probas-pairs))
 
 (def ^:dynamic *retry-wait-period* (or (:nlp-retry-wait-period-ms env) 10000))
 (defn get-probas
@@ -122,7 +104,7 @@
                   ;; success: write em!
                   (let [pairs (partition 2 (interleave tokens (data "probabilities")))
                         probas-key (keyword (name anno-type) "probas")]
-                    (write-probas node probas-key pairs)))))))))
+                    (nlpc/write-probas node probas-key pairs)))))))))
 
 (defrecord HttpProbDistProvider [config]
   SentenceLevelProbDistProvider

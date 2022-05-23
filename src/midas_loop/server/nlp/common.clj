@@ -1,7 +1,8 @@
 (ns midas-loop.server.nlp.common
   (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
-            [midas-loop.xtdb.easy :as cxe]))
+            [midas-loop.xtdb.easy :as cxe]
+            [xtdb.api :as xt]))
 
 ;; some inspo: https://stackoverflow.com/questions/14673108/asynchronous-job-queue-for-web-service-in-clojure
 ;; Gameplan here.
@@ -47,3 +48,29 @@
 (s/def ::http-config (s/keys :req-un [::url ::type]))
 ;; Maybe extend with other methods in the future
 (s/def ::config (s/and (s/keys :req-un [::type]) (s/or :http ::http-config)))
+
+;; Writing probas
+;; Get the XTDB entity that will bear a particular annotation identified by `key`
+(defmulti probas-entity (fn [node key id] key))
+(defmethod probas-entity :default [node key id]
+  (let [db (xt/db node)
+        token (xt/entity db id)]
+    (xt/entity db ((keyword "token" (namespace key)) token))))
+(defmethod probas-entity :sentence/probas [node key id]
+  (let [db (xt/db node)]
+    (xt/entity db id)))
+
+(cxe/deftx -write-probas [node key token-probas-pairs]
+  (let [tx (mapv (fn [[{:token/keys [id]} probas]]
+                   ;; todo: actually need to fetch the anno record
+                   (let [anno (probas-entity node key id)]
+                     (-> anno
+                         (assoc key probas)
+                         cxe/put*)))
+                 token-probas-pairs)]
+    tx))
+
+(defn write-probas [node key token-probas-pairs]
+  (when-not (#{:sentence/probas :xpos/probas :upos/probas :head/probas} key)
+    (throw (ex-info "Invalid probas key:" {:key key})))
+  (-write-probas node key token-probas-pairs))
