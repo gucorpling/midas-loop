@@ -66,13 +66,15 @@
             (Thread/sleep *retry-wait-period*)
             true)]
     (loop []
-      (let [{:keys [status body]}
+      (let [document-id (cxq/parent node :document/sentences sentence-id)
+            {:keys [status body]}
             (try
               ;; Parse the body manually later
               (binding [client/*current-middleware* (filterv #(not= % client/wrap-output-coercion) client/default-middleware)]
-                (client/post url {:form-params {:conllu (.toString (serialization/serialize-sentence node sentence-id))
-                                                :json   (cxq/pull2 node :sentence/id sentence-id)}
-                                  :content-type :json
+                (client/post url {:form-params   {:conllu      (.toString (serialization/serialize-sentence node sentence-id))
+                                                  :json        (cxq/pull2 node :sentence/id sentence-id)
+                                                  :full_conllu (.toString (serialization/serialize-document node document-id))}
+                                  :content-type  :json
                                   :retry-handler retry}))
               (catch Exception e
                 (do
