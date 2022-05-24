@@ -12,6 +12,34 @@
             [midas-loop.xtdb.queries.document :as cxqd]
             [midas-loop.server.nlp.common :as nlpc]))
 
+(declare get-probas validate parse-response)
+
+(defrecord HttpProbDistProvider [config]
+  SentenceLevelProbDistProvider
+  (predict-prob-dists
+    [this node sentence-id]
+    (let [{:keys [url anno-type]} config]
+      (if-let [sentence (cxe/entity node sentence-id)]
+        (let [document-id (ffirst (xt/q (xt/db node)
+                                        {:find  ['?d]
+                                         :where '[[?d :document/sentences ?s]]
+                                         :in    ['?s]}
+                                        sentence-id))
+              start (System/currentTimeMillis)
+              _ (get-probas node url anno-type sentence-id)
+              end (System/currentTimeMillis)
+              _ (complete-job node anno-type sentence-id)
+              remaining (count (get-sentence-ids-to-process node anno-type))]
+          (log/info (str "Completed " anno-type " job. " remaining " remaining."
+                         " Est. time remaining: " (format "%.2f" (/ (* remaining (- end start)) 1000.)) " seconds."))
+          (cxqd/calculate-stats node document-id)
+          this)
+        (do
+          (log/info (str "Sentence " sentence-id " appears to have been deleted before it was able to be processed."
+                         " Marking as completed."))
+          (complete-job node anno-type sentence-id)
+          this)))))
+
 (defn parse-response
   "Process a response returned to midas loop from an NLP service."
   [data sentence-id token-count]
@@ -107,29 +135,3 @@
                   (let [pairs (partition 2 (interleave tokens (data "probabilities")))
                         probas-key (keyword (name anno-type) "probas")]
                     (nlpc/write-probas node probas-key pairs)))))))))
-
-(defrecord HttpProbDistProvider [config]
-  SentenceLevelProbDistProvider
-  (predict-prob-dists
-    [this node sentence-id]
-    (let [{:keys [url anno-type]} config]
-      (if-let [sentence (cxe/entity node sentence-id)]
-        (let [document-id (ffirst (xt/q (xt/db node)
-                                        {:find  ['?d]
-                                         :where '[[?d :document/sentences ?s]]
-                                         :in    ['?s]}
-                                        sentence-id))
-              start (System/currentTimeMillis)
-              _ (get-probas node url anno-type sentence-id)
-              end (System/currentTimeMillis)
-              _ (complete-job node anno-type sentence-id)
-              remaining (count (get-sentence-ids-to-process node anno-type))]
-          (log/info (str "Completed " anno-type " job. " remaining " remaining."
-                         " Est. time remaining: " (format "%.2f" (/ (* remaining (- end start)) 1000.)) " seconds."))
-          (cxqd/calculate-stats node document-id)
-          this)
-        (do
-          (log/info (str "Sentence " sentence-id " appears to have been deleted before it was able to be processed."
-                         " Marking as completed."))
-          (complete-job node anno-type sentence-id)
-          this)))))

@@ -1,8 +1,9 @@
 (ns midas-loop.server.nlp.common
   (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
-            [midas-loop.xtdb.easy :as cxe]
-            [xtdb.api :as xt]))
+            [clojure.tools.logging :as log]
+            [xtdb.api :as xt]
+            [midas-loop.xtdb.easy :as cxe]))
 
 ;; some inspo: https://stackoverflow.com/questions/14673108/asynchronous-job-queue-for-web-service-in-clojure
 ;; Gameplan here.
@@ -15,20 +16,13 @@
 ;;   1. Inspect all items in the transaction and determine the sentence ID that is related to it
 ;;   2. Pool those sentence IDs into a set
 ;;   3. Queue a re-process with the NLP agent
-(defn job-id [anno-type] (keyword (name anno-type) "jobs"))
-(cxe/deftx submit-job [node anno-type sentence-id]
-  (let [{:keys [sentences] :as current} (or (cxe/entity node (job-id anno-type))
-                                            {:xt/id (job-id anno-type) :sentences #{}})
-        new (assoc current :sentences (conj sentences sentence-id))]
-    [(cxe/put* new)]))
 
-(cxe/deftx complete-job [node anno-type sentence-id]
-  (let [{:keys [sentences] :as current} (cxe/entity node (job-id anno-type))
-        new (assoc current :sentences (disj sentences sentence-id))]
-    [(cxe/put* new)]))
+;; TODO:
+;; - Support document-level processing for faster processing on import by making a new protocol
+;; - Make services also set the canonical annotation unless it is gold
+;; - Allow disabling processing during import
 
-(defn get-sentence-ids-to-process [node anno-type]
-  (or (:sentences (cxe/entity node (job-id anno-type))) #{}))
+;; Protocols --------------------------------------------------------------------------------
 (defn- valid-url? [s]
   (try
     (do (io/as-url s)
@@ -47,9 +41,26 @@
 (s/def ::type #{:http})
 (s/def ::http-config (s/keys :req-un [::url ::type]))
 ;; Maybe extend with other methods in the future
-(s/def ::config (s/and (s/keys :req-un [::type]) (s/or :http ::http-config)))
+(s/def ::config (s/and (s/keys :req-un [::type])
+                       (s/or :http ::http-config)))
 
-;; Writing probas
+;; Coordination functions --------------------------------------------------------------------------------
+(defn job-id [anno-type] (keyword (name anno-type) "jobs"))
+(cxe/deftx submit-job [node anno-type sentence-id]
+  (let [{:keys [sentences] :as current} (or (cxe/entity node (job-id anno-type))
+                                            {:xt/id (job-id anno-type) :sentences #{}})
+        new (assoc current :sentences (conj sentences sentence-id))]
+    [(cxe/put* new)]))
+
+(cxe/deftx complete-job [node anno-type sentence-id]
+  (let [{:keys [sentences] :as current} (cxe/entity node (job-id anno-type))
+        new (assoc current :sentences (disj sentences sentence-id))]
+    [(cxe/put* new)]))
+
+(defn get-sentence-ids-to-process [node anno-type]
+  (or (:sentences (cxe/entity node (job-id anno-type))) #{}))
+
+;; Writing probas --------------------------------------------------------------------------------
 ;; Get the XTDB entity that will bear a particular annotation identified by `key`
 (defmulti probas-entity (fn [node key id] key))
 (defmethod probas-entity :default [node key id]
