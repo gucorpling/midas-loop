@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-import json
+import json, sys
 from flask import Flask, request
 from typing import List, Tuple
 import numpy as np
@@ -12,6 +12,9 @@ from flair.data import Sentence
 from time import sleep
 
 app = Flask(__name__)
+
+# Load splitter model
+model = SequenceTagger.load("flair-splitter-sent.pt")
 
 
 def is_supertoken(t):
@@ -26,7 +29,7 @@ def is_plain_token(t):
     return not isinstance(t["id"], Iterable)
 
 
-def ssplit(full_conllu: str, span_size: int=20, stride_size: int=10):
+def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: int=10):
     """
     Given a document in a dictionary representing midas-loop json format,
     return probabilities that each token begins a new sentence (B) or not (O).
@@ -35,14 +38,28 @@ def ssplit(full_conllu: str, span_size: int=20, stride_size: int=10):
     toks = []
     ids = []
     parsed = conllu.parse(full_conllu)
+    target_begin = -1
+    target_end = -1
+    toknum = 0
+
+    #sys.stderr.write("target:\n")
+    #sys.stderr.write(sent_conllu + "\n")
+
+    # TODO: remove hack for detecting sentence token offset position in doc conllu
     for sent in parsed:
+        if target_begin != -1 and target_end == -1:  # Beginning already set and new sent has started
+            target_end = toknum
+        if sent.metadata["sent_id"] + "\n" in sent_conllu:  # This is the target sent
+            #sys.stderr.write("Found ID "+ sent.metadata["sent_id"] + "\n")
+            target_begin = toknum
         for tok in sent:
-            if not is_supertoken(tok):
+            if not is_supertoken(tok) and not is_ellipsis(tok):
+                toknum += 1
                 toks.append(tok["form"])
                 ids.append(tok["id"])
 
-    # Load splitter model
-    model = SequenceTagger.load("flair-splitter-sent.pt")
+    if target_end == -1:
+        target_end = toknum
 
     # Get a fresh prediction
     final_mapping = {}  # Map each contextualized token to its (sequence_number, position)
@@ -97,13 +114,15 @@ def ssplit(full_conllu: str, span_size: int=20, stride_size: int=10):
         #preds.append({tid:{pred_tag:pred_proba,other_tag:other_proba}})
         preds.append({pred_tag:pred_proba,other_tag:other_proba})
 
-    return preds
+    #sys.stderr.write(str(target_begin) + "\n")
+    #sys.stderr.write(str(target_end)+ "\n")
+    return preds[target_begin:target_end]
 
 
 @app.route("/", methods=["POST"])
 def get():
     data = request.json
-    return json.dumps({"probabilities": ssplit(data["full_conllu"])})
+    return json.dumps({"probabilities": ssplit(data["full_conllu"],data["conllu"])})
 
 
 null = None
@@ -131,10 +150,18 @@ SAMPLE_DOC = """# s_type = frag
 9       Christ  Christ  PROPN   NNP     Number=Sing     7       nmod    7:nmod:of       Entity=object-4)object-5)(person-6)
 """
 
+SAMPLE_SENT = """# newdoc id = AMALGUM_bio_aachen
+# sent_id = AMALGUM_bio_aachen-1
+# text = Master of the Aachen Altar
+1       Master  master  NOUN    NN      Number=Sing     0       root    0:root  Discourse=preparation:1->4|Entity=(person-1
+2       of      of      ADP     IN      _       5       case    5:case  _
+3       the     the     DET     DT      Definite=Def|PronType=Art       5       det     5:det   Entity=(place-2
+4       Aachen  Aachen  PROPN   NNP     Number=Sing     5       compound        5:compound      Entity=(place-3)
+5       Altar   Altar   PROPN   NNP     Number=Sing     1       nmod    1:nmod:of       Entity=person-1)place-2)"""
 
 def debug():
-    forms = []
-    for form, probas in zip(forms, ssplit(SAMPLE_DOC)):
+    forms = ["Master","of","the","Aachen","Altar"]
+    for form, probas in zip(forms, ssplit(SAMPLE_DOC, SAMPLE_SENT)):
         print(form)
         print({x: y for x, y in probas.items() if y > 0.0001})
         print()
