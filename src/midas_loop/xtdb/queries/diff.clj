@@ -49,7 +49,7 @@
   "Produce an editscript diff for a document given an old and new conllu string representing it."
   [node document-id new-parsed]
   (let [tmp-node (xt/start-node {})
-        [new-tx _] (cxc/build-document new-parsed)
+        {new-tx :tx} (cxc/build-document new-parsed)
         new-id (-> new-tx first second :document/id)
         spec-db (xt/with-tx (xt/db tmp-node) new-tx)
         doc-old (cxq/pull2 (xt/db node) :document/id document-id)
