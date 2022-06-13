@@ -176,14 +176,28 @@
         document-tx (cxe/put* document)
         final-tx (reduce into [document-tx] sentence-txs)]
 
-    [final-tx sentence-ids document-id]))
+    {:tx            final-tx
+     :sentence-ids  sentence-ids
+     :document-id   document-id
+     :document-name document-name}))
+
+(defn delete-document** [xtdb-node document-id]
+  ;; TODO: should actually delete all other nodes as well, but this is good enough for good behavior
+  [(cxe/delete* document-id)])
+
+(defn add-duplicate-document-deletions [xtdb-node tx document-name]
+  (let [identical-names (map first (xt/q (xt/db xtdb-node) {:find ['?d] :where [['?d :document/name document-name]]}))]
+    (vec (reduce (fn [tx doc-id]
+                   (log/info (str "Deleting document with duplicate name \"" document-name "\": " doc-id))
+                   (into tx (delete-document** xtdb-node doc-id)))
+                 tx
+                 identical-names))))
 
 (defn create-document
   "Call build-document and use its output to submit to a xtdb node"
   [xtdb-node document]
-  (let [[transactions _ _] (build-document document)]
-    (cxe/submit-tx-sync xtdb-node transactions)
-    #_(cxqd/calculate-stats xtdb-node (-> transactions first second :document/id))))
+  (let [{:keys [tx document-name]} (build-document document)]
+    (cxe/submit-tx-sync xtdb-node (add-duplicate-document-deletions xtdb-node tx document-name))))
 
 (defn ingest-conllu-file
   "Given a system filepath, ingest it by reading it, parsing it, calling build-document on it,
@@ -193,8 +207,8 @@
   (let [parsed (->> filepath
                     slurp
                     parse-conllu-string)
-        [transactions sentence-ids document-id] (build-document parsed)]
-    (xt/await-tx xtdb-node (xt/submit-tx xtdb-node transactions))
+        {:keys [tx sentence-ids document-id document-name]} (build-document parsed)]
+    (xt/await-tx xtdb-node (xt/submit-tx xtdb-node (add-duplicate-document-deletions xtdb-node tx document-name)))
     (if-not (empty? agent-map)
       (nlpl/notify-agents xtdb-node agent-map sentence-ids)
       (cxqd/calculate-stats xtdb-node document-id))

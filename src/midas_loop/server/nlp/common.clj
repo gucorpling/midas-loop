@@ -73,7 +73,6 @@
 
 (cxe/deftx -write-probas [node key token-probas-pairs]
   (let [tx (mapv (fn [[{:token/keys [id]} probas]]
-                   ;; todo: actually need to fetch the anno record
                    (let [anno (probas-entity node key id)]
                      (-> anno
                          (assoc key probas)
