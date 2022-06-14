@@ -71,11 +71,42 @@
   (let [db (xt/db node)]
     (xt/entity db id)))
 
+;; If we get
+(defmulti maybe-replace-annotation (fn [anno key] key))
+(defmethod maybe-replace-annotation :default [anno key]
+  (let [value-key (keyword (namespace key) "value")
+        probas (key anno)
+        gold? (= ((keyword (namespace key) "quality") anno) "gold")
+        [best-label _] (and probas (apply (partial max-key second) probas))
+        existing-label (value-key anno)]
+    (cond gold?
+          (do
+            ;; (log/info "Annotation has gold status, skipping.")
+            anno)
+
+          (or (nil? probas) (empty? probas))
+          anno
+
+          (= existing-label best-label)
+          (do
+            ;; (log/info "Existing label matches NLP service label.")
+            anno)
+
+          :else
+          (do
+            ;; (log/info (str "Replacing existing label " existing-label " with best one from NLP service: " best-label))
+            (assoc anno value-key best-label)))))
+
+(defmethod maybe-replace-annotation :sentence/probas [anno key]
+  ;; TODO: should do sentence splitting, actually
+  anno)
+
 (cxe/deftx -write-probas [node key token-probas-pairs]
   (let [tx (mapv (fn [[{:token/keys [id]} probas]]
                    (let [anno (probas-entity node key id)]
                      (-> anno
                          (assoc key probas)
+                         (maybe-replace-annotation key)
                          cxe/put*)))
                  token-probas-pairs)]
     tx))
