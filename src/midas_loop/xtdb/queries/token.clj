@@ -124,7 +124,7 @@
             (write-error (str "New value for head annotation must be either a valid token, \"root\", or null; got: " parsed-value))
 
             :else
-            (let [tx [(cxe/put* (merge entity {:head/id id :head/value parsed-value}))]
+            (let [tx [(cxe/put* (merge entity {:head/id id :head/value parsed-value :head/quality "gold"}))]
                   deps-tx (get-head-deps-tx node id (:head/value entity) parsed-value)]
               (if (cxe/submit-tx-sync node (reduce into [tx deps-tx]))
                 (write-ok)
@@ -161,7 +161,7 @@
             (write-error (str "Deprel record does not exist: " deprel-record))
 
             :else
-            (let [tx [(cxe/put* (merge deprel-record {:deprel/id id :deprel/value value}))]
+            (let [tx [(cxe/put* (merge deprel-record {:deprel/id id :deprel/value value :deprel/quality "gold"}))]
                   deps-tx (get-deprel-deps-tx node token-id head-id (:deprel/value deprel-record) value)]
 
               (if (cxe/submit-tx-sync node (reduce into [tx deps-tx]))
