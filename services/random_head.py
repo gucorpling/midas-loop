@@ -16,7 +16,12 @@ def get_head_probas(sentence):
 
     labels = []
     for token in tokens:
-        probs = [random.random() for _ in potential_heads]
+        remainder = 1
+        probs = []
+        for _ in potential_heads:
+            prob = random.random() * remainder
+            probs.append(prob)
+            remainder = remainder - sum(probs)
         probs = [x / sum(probs) for x in probs]
         labels.append({head: prob for head, prob in zip(potential_heads, probs)})
 
