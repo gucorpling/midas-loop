@@ -15,52 +15,57 @@
 :hide-uri-scheme: 1
 
 = Introduction
+**Midas Loop** is a web application for taking https://universaldependencies.org/[Universal Dependencies] corpora and improving the quality of their annotations.
+For more information on motivation, functionality, and supported workflows, please see our paper at https://cemantix.org/workshops/law/xvi/[LAW XVI] (link to paper coming).
 
+== Key features
+=== CoNLL-U Import/Export Support
+Midas Loop supports import and export of corpora in https://universaldependencies.org/format.html[the CoNLL-U format].
 
-= Development
-https://leiningen.org/[Leiningen] is used to build code.
+=== CoNLL-U Editing
+Editing of <<Limitations,most>> annotations in the CoNLL-U format is supported.
 
-== Dev Server
-Run `lein repl` in order to get a dev REPL, then execute `(start)` in the prompt.
-`(stop)` and `(restart)` are also available in the REPL.
-This will use the config at `env/dev/resources/config.edn`.
+=== Active Learning Support
+Midas Loop allows NLP models to report probability distributions on <<Limitations,several>> annotation types and uses these distributions to provide visual cues for annotators that a certain annotation is suspicious.
+The annotator may then decide whether to keep or replace the annotation, and the model used may be trained further on the improved data.
+Models are completely decoupled from the core system and communicate with it via HTTP, so any model may be used as long as it obeys <<NLP Services,the HTTP protocol>>.
 
-== Testing
-Run `lein test`.
-This will use the config at `env/test/resources/config.edn`.
+These model-provided label distributions are also aggregated at the document level to allow annotators to triage documents based on how uncertain a model was about certain annotation types on average throughout the document.
 
-== Production Build
+== Limitations
+Midas Loop supports the following:
 
-=== Build the Client
-1. Clone https://github.com/gucorpling/midas-loop-ui[midas-loop-ui].
-2. Examine and modify the contents of `webpack.prod.js`, specifically the https://github.com/gucorpling/midas-loop-ui/blob/2bfe96b3cc640585bf017fd02eaccdea22ab500b/webpack.prod.js#L80L87[definitions].
-You must at least provide a new value for `API_ENDPOINT`, which should match the URL at which your Midas Loop backend system will be reachable.
-For example, if you have a machine reachable at `http://my.university.edu`, and the Midas Loop backend system is exposed on port `3000`, your `API_ENDPOINT` should be set to `http://my.university.edu:3000/api`.
-3. Install dependencies: `yarn`
-4. Compile assets for production deployment: `yarn build`
-5. Ensure that assets were successfully compiled at `dist/`
+* Sentence break editing
+* `LEMMA` editing
+* `XPOS` editing
+* `HEAD` editing
+* `DEPREL` editing
+* Active Learning support for `HEAD`, `XPOS`, and sentence breaks
 
-=== Build the Server
-1. Clone https://github.com/gucorpling/midas-loop[midas-loop].
-2. Move the _contents_ of the `dist/` folder you just created into `resources/public/`.
-The `.js` files, etc. should be directly in the `resources/public/` folder, not in `resources/public/dist/`.
-3. Compile an _uberjar_ with `lein uberjar`.
-This will produce a standalone JAR ready for distribution and execution via `java -jar`.
-Unless overridden, this will use the config at `env/prod/resources/config.edn`.
-4. Verify that the uberjar was produced successfully by running `java -jar target/uberjar/midas-loop.jar`.
-This `.jar` is the only artefact you will need to deploy.
+Midas Loop does NOT support the following:
 
-== Building Docs
-Install https://docs.asciidoctor.org/asciidoctor/latest/install/[Asciidoctor], then:
+* `FORM`/tokenization editing
+* `UPOS` editing
+* `FEATS` editing
+* `DEPS` editing
+* `MISC` editing
 
-```
-asciidoctor-pdf -o target/book.pdf -b pdf -r asciidoctor-diagram docs/book.adoc
-asciidoctor -o target/book.html -b html -r asciidoctor-diagram docs/book.adoc
-```
+(**Caveat**: these are the limitations of the Midas Loop UI, but the Midas Loop core system actually supports editing of all core data types--see `/swagger-ui` on a running server for API documentation.
+It is possible to build your own UI or extend the Midas Loop UI to provide some of these additional editing features.
+Additionally, please open an issue on GitHub if there is a kind of editing you would like to see added to Midas Loop.)
 
-= Setup
-== Server
-Get an uberjar (cf. <<Prod Build>>).
+== Roadmap
+The following are priorities for future work:
+
+* More efficient NLP processing
+* Support for full CoNLL-U editing
+* Online retraining of NLP models
+
+Please do not hesitate to open an issue on GitHub with feature requests, etc.
+
+= Operation
+== Server Setup
+Get an uberjar either by <<Production Build,building it>> or by https://github.com/gucorpling/midas-loop/tags[downloading the latest pre-built one].
 Note the following top level commands:
 
 ```
@@ -76,7 +81,43 @@ Run one of the top level commands (e.g. `java -jar midas-loop.jar import --help`
 IMPORTANT: Each command requires that your server not be running.
 If you are running your server using the `run` command, be sure you shut it down before running any of the other commands.
 
+== Configuration
+By default, the uberjar will use its copy of the config located at https://github.com/gucorpling/midas-loop/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
+If you wish to customize this, specify another config using `-Dconf=...`:
+
+`java -Dconf="/path/to/my/config.edn" -jar midas-loop.jar ...`
+
+Config keys:
+
+[cols="1,1"]
+|===
+|`:midas-loop.server.xtdb/config`
+|Should be a map with two subkeys: `:main-db-dir` (required) has a string specifying the main database's path on the filesystem relative to the CWD; `:http-server-port`, if present, should be a number specifying the port on which to serve XTDB's internal HTTP interface.
+
+|`:midas-loop.server.tokens/config`
+|Map with a single key, `:token-db-dir`, (required) which specifies the location on the filepath of the authorization token database.
+
+|`:dev`
+|Either `true` or `false`. If `true`, do not require any authorization. This should always be `false` in production.
+
+|`:nlp-services`
+| A vector of three-key maps. Each map should have a `:type` (currently always `:http`), a `:anno-type` (must be `:sentence`, `:xpos`, `:upos`, or `:head`), and a url (must be pointed at running <<NLP Services>>)
+
+|`:nlp-retry-wait-period-ms`
+| Time, in milliseconds, to wait after a failure before attempting to contact an HTTP NLP service again. Defaults to `10000` (10 seconds).
+
+|`:port`
+| Port used for the main web server.
+
+| `:cors-patterns`
+| A set of CORS patterns (regular expressions) for adding additional allowed origins, e.g. `#{"*.georgetown.edu"}`.
+Localhost and the main origin are always allowed regardless of this item's value.
+|===
+
 == Authorization
+WARNING: Midas Loop's authorization scheme is primitive and vulnerable to attack, and is therefore only useful for preventing low-effort unauthorized access.
+You SHOULD NOT store sensitive data in a Midas Loop system.
+
 === Granting
 Token-based authorization is used.
 Each user should have a token made for them, like so:
@@ -87,10 +128,12 @@ java -jar midas-loop.jar token add --name "Sam Doe" --email "sd42@gmail.com" --q
 
 Give your user their token and instruct them to keep it secret.
 
-NOTE: Tokens that will be used by humans should have `gold` quality, and tokens that will be used by models should have `silver` quality.
+If you are using a non-standard configuration using `java -Dconf=...`, **be sure to include it** during import.
 
 === Listing
 You can see all valid tokens with `java -jar midas-loop.jar token list`.
+
+If you are using a non-standard configuration using `java -Dconf=...`, **be sure to include it** during import.
 
 === Revoking
 You can revoke a token like so:
@@ -98,6 +141,26 @@ You can revoke a token like so:
 ```
 java -jar midas-loop.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"
 ```
+
+If you are using a non-standard configuration using `java -Dconf=...`, **be sure to include it** during import.
+
+== Importing
+Use the `import` subcommand and supply it with a directory path.
+The directory will be recursively searched for files ending in `.conllu` and each will be loaded into the database.
+Example invocation:
+
+`java -jar midas-loop.jar import dir/with/conllu-files/`
+
+If you are using a non-standard configuration using `java -Dconf=...`, **be sure to include it** during import.
+
+== Exporting
+Use the `export` subcommand and provide it with a directory path.
+A separate `.conllu` file for each document will be created directly under that directory.
+Example invocation:
+
+`java -jar midas-loop.jar export output/dir/`
+
+If you are using a non-standard configuration using `java -Dconf=...`, **be sure to include it** during import.
 
 == NLP Services
 Midas Loop is able to contact _NLP services_ via HTTP in order to get machine learning model outputs for certain kinds of annotations.
@@ -137,47 +200,68 @@ This is a barebones HTTP service implemented using Flask which loads a pretraine
 It listens for a POST request, and when it receives it, uses the model to parse the CoNLL-U string and recover the probabilities from the model's outputs.
 Note that the model is initialized globally so that it may reside in memory in between requests.
 
-== Configuration
-By default, the uberjar will use its copy of the config located at https://github.com/gucorpling/midas-loop/blob/master/env/prod/resources/config.edn[`env/prod/resources/config.edn`].
-If you wish to customize this, specify another config using `-Dconf=...`:
+== Running
+Simply `java -Dconf=... -jar midas-loop.jar run` once you are satisfied with your configuration.
+Be sure that any required NLP services are running as well.
+To stop the server, interrupt it with `CTRL+C`.
+Avoid killing the process, as this may corrupt the database.
 
-`java -Dconf="/path/to/my/config.edn" -jar midas-loop.jar ...`
+== Clearing Database Files
+All data is stored on-disk: authorization information is by default stored at `xtdb_token_data`, and all other information is stored at `xtdb_data`.
+If you wish to clear either database, you may simply delete the relevant folder--just make sure that the system is **not running** before you do so, and next time the system starts, the folder will be regenerated.
 
-Config keys:
+= Changelog
+[discrete]
+== 0.0.1
+_Initial Release_
 
-[cols="1,1"]
-|===
-|`:midas-loop.server.xtdb/config`
-|Should be a map with two subkeys: `:main-db-dir` (required) has a string specifying the main database's path on the filesystem relative to the CWD; `:http-server-port`, if present, should be a number specifying the port on which to serve XTDB's internal HTTP interface.
+= Development
+https://leiningen.org/[Leiningen] is used to build code.
 
-|`:midas-loop.server.tokens/config`
-|Map with a single key, `:token-db-dir`, (required) which specifies the location on the filepath of the authorization token database.
+== Dev Server
+Run `lein repl` in order to get a dev REPL, then execute `(start)` in the prompt.
+`(stop)` and `(restart)` are also available in the REPL.
+This will use the config at `env/dev/resources/config.edn`.
 
-|`:dev`
-|Either `true` or `false`. If `true`, do not require any authorization. This should always be `false` in production.
+== Testing
+Run `lein test`.
+This will use the config at `env/test/resources/config.edn`.
 
-|`:nlp-services`
-| A vector of three-key maps. Each map should have a `:type` (currently always `:http`), a `:anno-type` (must be `:sentence`, `:xpos`, `:upos`, or `:head`), and a url (must be pointed at running <<NLP Services>>)
+== Production Build
 
-|`:nlp-retry-wait-period-ms`
-| Time, in milliseconds, to wait after a failure before attempting to contact an HTTP NLP service again. Defaults to `10000` (10 seconds).
+=== Build the Client
+1. Clone https://github.com/gucorpling/midas-loop-ui[midas-loop-ui].
+2. Examine and modify the contents of `webpack.prod.js`, specifically the https://github.com/gucorpling/midas-loop-ui/blob/2bfe96b3cc640585bf017fd02eaccdea22ab500b/webpack.prod.js#L80L87[definitions].
+You must at least provide a new value for `API_ENDPOINT`, which should match the URL at which your Midas Loop backend system will be reachable.
+For example, if you have a machine reachable at `http://my.university.edu`, and the Midas Loop backend system is exposed on port `3000`, your `API_ENDPOINT` should be set to `http://my.university.edu:3000/api`.
+You may also wish to customize `XPOS_LABELS` and `DEPREL_LABELS`.
+3. Install dependencies: `yarn`
+4. Compile assets for production deployment: `yarn build`
+5. Ensure that assets were successfully compiled at `dist/`
 
-|`:port`
-| Port used for the main web server.
+=== Build the Server
+1. Clone https://github.com/gucorpling/midas-loop[midas-loop].
+2. Move the _contents_ of the `dist/` folder you just created into `resources/public/`.
+The `.js` files, etc. should be directly in the `resources/public/` folder, not in `resources/public/dist/`.
+3. Compile an _uberjar_ with `lein uberjar`.
+This will produce a standalone JAR ready for distribution and execution via `java -jar`.
+Unless overridden, this will use the config at `env/prod/resources/config.edn`.
+4. Verify that the uberjar was produced successfully by running `java -jar target/uberjar/midas-loop.jar`.
+This `.jar` is the only artefact you will need to deploy.
 
-| `:cors-patterns`
-| A set of CORS patterns (regular expressions) for adding additional allowed origins, e.g. `#{"*.georgetown.edu"}`.
-Localhost and the main origin are always allowed regardless of this item's value.
-|===
+== Building Docs
+Install https://docs.asciidoctor.org/asciidoctor/latest/install/[Asciidoctor], then:
 
-= Operation
-== Importing
-`java -jar midas-loop.jar import dir/with/conllu-files/`
+```
+asciidoctor-pdf -o target/book.pdf -b pdf -r asciidoctor-diagram docs/book.adoc
+asciidoctor -o target/book.html -b html -r asciidoctor-diagram docs/book.adoc
+```
 
-== API
-Run your server and see `/swagger-ui/`.
+== Version Bump Checklist
+Always do the following:
 
-TODO: add detail
-
-=== Upload
-=== Diffing
+* Change version number in https://github.com/gucorpling/midas-loop/blob/master/project.clj#L1[project.clj].
+* Change version number in https://github.com/gucorpling/midas-loop/blob/master/src/midas_loop/core.clj#L100[core.clj].
+* Ensure that <<Changelog>> and <<Introduction>> are up to date.
+* Compile and push the latest docs.
+* Make a GitHub release with the appropriate version number **and** with an accompanying uberjar.
