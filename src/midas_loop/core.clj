@@ -7,8 +7,6 @@
             [cli-matic.utils :as U]
             [cli-matic.help-gen :as H]
             [cli-matic.platform :as P]
-            [xtdb.api :as xt]
-            [midas-loop.server.config :refer [env]]
             [midas-loop.server.xtdb :refer [xtdb-node]]
             [midas-loop.server.nlp :refer [agent-map]]
             [midas-loop.xtdb.creation :refer [ingest-conllu-files]]
@@ -98,7 +96,7 @@
 
 (def cli-config
   {:app         {:command     "midas-loop"
-                 :description "https://github.com/lgessler/midas-loop"
+                 :description "https://github.com/gucorpling/midas-loop"
                  :version     "0.0.1"}
    :global-opts []
    :commands    [;; main method--run the HTTP server
