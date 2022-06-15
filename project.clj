@@ -1,7 +1,7 @@
-(defproject midas-loop "0.1.0-SNAPSHOT"
+(defproject midas-loop "0.0.1"
 
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "Midas Loop"
+  :url "http://github.com/gucorpling/midas-loop"
 
   :dependencies [[ch.qos.logback/logback-classic "1.2.5"]
                  [clojure.java-time "0.3.3"]
