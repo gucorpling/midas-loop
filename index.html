@@ -448,45 +448,57 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div id="toc" class="toc2">
 <div id="toctitle">Table of Contents</div>
 <ul class="sectlevel1">
-<li><a href="#_introduction">1. Introduction</a></li>
-<li><a href="#_development">2. Development</a>
+<li><a href="#_introduction">1. Introduction</a>
 <ul class="sectlevel2">
-<li><a href="#_dev_server">2.1. Dev Server</a></li>
-<li><a href="#_testing">2.2. Testing</a></li>
-<li><a href="#_prod_build">2.3. Prod Build</a></li>
-<li><a href="#_building_docs">2.4. Building Docs</a></li>
+<li><a href="#_key_features">1.1. Key features</a>
+<ul class="sectlevel3">
+<li><a href="#_conll_u_importexport_support">1.1.1. CoNLL-U Import/Export Support</a></li>
+<li><a href="#_conll_u_editing">1.1.2. CoNLL-U Editing</a></li>
+<li><a href="#_active_learning_support">1.1.3. Active Learning Support</a></li>
 </ul>
 </li>
-<li><a href="#_setup">3. Setup</a>
+<li><a href="#_limitations">1.2. Limitations</a></li>
+<li><a href="#_roadmap">1.3. Roadmap</a></li>
+</ul>
+</li>
+<li><a href="#_operation">2. Operation</a>
 <ul class="sectlevel2">
-<li><a href="#_server">3.1. Server</a></li>
-<li><a href="#_authorization">3.2. Authorization</a>
+<li><a href="#_server_setup">2.1. Server Setup</a></li>
+<li><a href="#_configuration">2.2. Configuration</a></li>
+<li><a href="#_authorization">2.3. Authorization</a>
 <ul class="sectlevel3">
-<li><a href="#_granting">3.2.1. Granting</a></li>
-<li><a href="#_listing">3.2.2. Listing</a></li>
-<li><a href="#_revoking">3.2.3. Revoking</a></li>
+<li><a href="#_granting">2.3.1. Granting</a></li>
+<li><a href="#_listing">2.3.2. Listing</a></li>
+<li><a href="#_revoking">2.3.3. Revoking</a></li>
 </ul>
 </li>
-<li><a href="#_nlp_services">3.3. NLP Services</a>
+<li><a href="#_importing">2.4. Importing</a></li>
+<li><a href="#_exporting">2.5. Exporting</a></li>
+<li><a href="#_nlp_services">2.6. NLP Services</a>
 <ul class="sectlevel3">
-<li><a href="#_inputs">3.3.1. Inputs</a></li>
-<li><a href="#_outputs">3.3.2. Outputs</a></li>
-<li><a href="#_service_registration">3.3.3. Service Registration</a></li>
-<li><a href="#_example">3.3.4. Example</a></li>
+<li><a href="#_inputs">2.6.1. Inputs</a></li>
+<li><a href="#_outputs">2.6.2. Outputs</a></li>
+<li><a href="#_service_registration">2.6.3. Service Registration</a></li>
+<li><a href="#_example">2.6.4. Example</a></li>
 </ul>
 </li>
-<li><a href="#_configuration">3.4. Configuration</a></li>
+<li><a href="#_running">2.7. Running</a></li>
+<li><a href="#_clearing_database_files">2.8. Clearing Database Files</a></li>
 </ul>
 </li>
-<li><a href="#_operation">4. Operation</a>
+<li><a href="#_changelog">3. Changelog</a></li>
+<li><a href="#_development">4. Development</a>
 <ul class="sectlevel2">
-<li><a href="#_importing">4.1. Importing</a></li>
-<li><a href="#_api">4.2. API</a>
+<li><a href="#_dev_server">4.1. Dev Server</a></li>
+<li><a href="#_testing">4.2. Testing</a></li>
+<li><a href="#_production_build">4.3. Production Build</a>
 <ul class="sectlevel3">
-<li><a href="#_upload">4.2.1. Upload</a></li>
-<li><a href="#_diffing">4.2.2. Diffing</a></li>
+<li><a href="#_build_the_client">4.3.1. Build the Client</a></li>
+<li><a href="#_build_the_server">4.3.2. Build the Server</a></li>
 </ul>
 </li>
+<li><a href="#_building_docs">4.4. Building Docs</a></li>
+<li><a href="#_version_bump_checklist">4.5. Version Bump Checklist</a></li>
 </ul>
 </li>
 </ul>
@@ -496,59 +508,122 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <div class="sect1">
 <h2 id="_introduction"><a class="anchor" href="#_introduction"></a><a class="link" href="#_introduction">1. Introduction</a></h2>
 <div class="sectionbody">
-
+<div class="paragraph">
+<p><strong>Midas Loop</strong> is a web application for taking <a href="https://universaldependencies.org/">Universal Dependencies</a> corpora and improving the quality of their annotations.
+For more information on motivation, functionality, and supported workflows, please see our paper at <a href="https://cemantix.org/workshops/law/xvi/">LAW XVI</a> (link to paper coming).</p>
+</div>
+<div class="sect2">
+<h3 id="_key_features"><a class="anchor" href="#_key_features"></a><a class="link" href="#_key_features">1.1. Key features</a></h3>
+<div class="sect3">
+<h4 id="_conll_u_importexport_support"><a class="anchor" href="#_conll_u_importexport_support"></a><a class="link" href="#_conll_u_importexport_support">1.1.1. CoNLL-U Import/Export Support</a></h4>
+<div class="paragraph">
+<p>Midas Loop supports import and export of corpora in <a href="https://universaldependencies.org/format.html">the CoNLL-U format</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_conll_u_editing"><a class="anchor" href="#_conll_u_editing"></a><a class="link" href="#_conll_u_editing">1.1.2. CoNLL-U Editing</a></h4>
+<div class="paragraph">
+<p>Editing of <a href="#_limitations">most</a> annotations in the CoNLL-U format is supported.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_active_learning_support"><a class="anchor" href="#_active_learning_support"></a><a class="link" href="#_active_learning_support">1.1.3. Active Learning Support</a></h4>
+<div class="paragraph">
+<p>Midas Loop allows NLP models to report probability distributions on <a href="#_limitations">several</a> annotation types and uses these distributions to provide visual cues for annotators that a certain annotation is suspicious.
+The annotator may then decide whether to keep or replace the annotation, and the model used may be trained further on the improved data.
+Models are completely decoupled from the core system and communicate with it via HTTP, so any model may be used as long as it obeys <a href="#_nlp_services">the HTTP protocol</a>.</p>
+</div>
+<div class="paragraph">
+<p>These model-provided label distributions are also aggregated at the document level to allow annotators to triage documents based on how uncertain a model was about certain annotation types on average throughout the document.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_limitations"><a class="anchor" href="#_limitations"></a><a class="link" href="#_limitations">1.2. Limitations</a></h3>
+<div class="paragraph">
+<p>Midas Loop supports the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Sentence break editing</p>
+</li>
+<li>
+<p><code>LEMMA</code> editing</p>
+</li>
+<li>
+<p><code>XPOS</code> editing</p>
+</li>
+<li>
+<p><code>HEAD</code> editing</p>
+</li>
+<li>
+<p><code>DEPREL</code> editing</p>
+</li>
+<li>
+<p>Active Learning support for <code>HEAD</code>, <code>XPOS</code>, and sentence breaks</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Midas Loop does NOT support the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p><code>FORM</code>/tokenization editing</p>
+</li>
+<li>
+<p><code>UPOS</code> editing</p>
+</li>
+<li>
+<p><code>FEATS</code> editing</p>
+</li>
+<li>
+<p><code>DEPS</code> editing</p>
+</li>
+<li>
+<p><code>MISC</code> editing</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>(<strong>Caveat</strong>: these are the limitations of the Midas Loop UI, but the Midas Loop core system actually supports editing of all core data types&#8212;&#8203;see <code>/swagger-ui</code> on a running server for API documentation.
+It is possible to build your own UI or extend the Midas Loop UI to provide some of these additional editing features.
+Additionally, please open an issue on GitHub if there is a kind of editing you would like to see added to Midas Loop.)</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_roadmap"><a class="anchor" href="#_roadmap"></a><a class="link" href="#_roadmap">1.3. Roadmap</a></h3>
+<div class="paragraph">
+<p>The following are priorities for future work:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>More efficient NLP processing</p>
+</li>
+<li>
+<p>Support for full CoNLL-U editing</p>
+</li>
+<li>
+<p>Online retraining of NLP models</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>Please do not hesitate to open an issue on GitHub with feature requests, etc.</p>
+</div>
+</div>
 </div>
 </div>
 <div class="sect1">
-<h2 id="_development"><a class="anchor" href="#_development"></a><a class="link" href="#_development">2. Development</a></h2>
-<div class="sectionbody">
-<div class="paragraph">
-<p><a href="https://leiningen.org/">Leiningen</a> is used to build code.</p>
-</div>
-<div class="sect2">
-<h3 id="_dev_server"><a class="anchor" href="#_dev_server"></a><a class="link" href="#_dev_server">2.1. Dev Server</a></h3>
-<div class="paragraph">
-<p>Run <code>lein repl</code> in order to get a dev REPL, then execute <code>(start)</code> in the prompt.
-<code>(stop)</code> and <code>(restart)</code> are also available in the REPL.
-This will use the config at <code>env/dev/resources/config.edn</code>.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_testing"><a class="anchor" href="#_testing"></a><a class="link" href="#_testing">2.2. Testing</a></h3>
-<div class="paragraph">
-<p>Run <code>lein test</code>.
-This will use the config at <code>env/test/resources/config.edn</code>.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_prod_build"><a class="anchor" href="#_prod_build"></a><a class="link" href="#_prod_build">2.3. Prod Build</a></h3>
-<div class="paragraph">
-<p>Run <code>lein uberjar</code>.
-This will produce a standalone JAR ready for distribution and execution via <code>java -jar</code>.
-Unless overridden, this will use the config at <code>env/prod/resources/config.edn</code>.</p>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_building_docs"><a class="anchor" href="#_building_docs"></a><a class="link" href="#_building_docs">2.4. Building Docs</a></h3>
-<div class="paragraph">
-<p>Install <a href="https://docs.asciidoctor.org/asciidoctor/latest/install/">Asciidoctor</a>, then:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code>asciidoctor-pdf -o target/book.pdf -b pdf -r asciidoctor-diagram docs/book.adoc
-asciidoctor -o target/book.html -b html -r asciidoctor-diagram docs/book.adoc</code></pre>
-</div>
-</div>
-</div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_setup"><a class="anchor" href="#_setup"></a><a class="link" href="#_setup">3. Setup</a></h2>
+<h2 id="_operation"><a class="anchor" href="#_operation"></a><a class="link" href="#_operation">2. Operation</a></h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_server"><a class="anchor" href="#_server"></a><a class="link" href="#_server">3.1. Server</a></h3>
+<h3 id="_server_setup"><a class="anchor" href="#_server_setup"></a><a class="link" href="#_server_setup">2.1. Server Setup</a></h3>
 <div class="paragraph">
-<p>Get an uberjar (cf. <a href="#_prod_build">Prod Build</a>).
+<p>Get an uberjar either by <a href="#_production_build">building it</a> or by <a href="https://github.com/gucorpling/midas-loop/tags">downloading the latest pre-built one</a>.
 Note the following top level commands:</p>
 </div>
 <div class="listingblock">
@@ -578,128 +653,7 @@ If you are running your server using the <code>run</code> command, be sure you s
 </div>
 </div>
 <div class="sect2">
-<h3 id="_authorization"><a class="anchor" href="#_authorization"></a><a class="link" href="#_authorization">3.2. Authorization</a></h3>
-<div class="sect3">
-<h4 id="_granting"><a class="anchor" href="#_granting"></a><a class="link" href="#_granting">3.2.1. Granting</a></h4>
-<div class="paragraph">
-<p>Token-based authorization is used.
-Each user should have a token made for them, like so:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code>java -jar midas-loop.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"</code></pre>
-</div>
-</div>
-<div class="paragraph">
-<p>Give your user their token and instruct them to keep it secret.</p>
-</div>
-<div class="admonitionblock note">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Note</div>
-</td>
-<td class="content">
-Tokens that will be used by humans should have <code>gold</code> quality, and tokens that will be used by models should have <code>silver</code> quality.
-</td>
-</tr>
-</table>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_listing"><a class="anchor" href="#_listing"></a><a class="link" href="#_listing">3.2.2. Listing</a></h4>
-<div class="paragraph">
-<p>You can see all valid tokens with <code>java -jar midas-loop.jar token list</code>.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_revoking"><a class="anchor" href="#_revoking"></a><a class="link" href="#_revoking">3.2.3. Revoking</a></h4>
-<div class="paragraph">
-<p>You can revoke a token like so:</p>
-</div>
-<div class="listingblock">
-<div class="content">
-<pre class="highlight"><code>java -jar midas-loop.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"</code></pre>
-</div>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_nlp_services"><a class="anchor" href="#_nlp_services"></a><a class="link" href="#_nlp_services">3.3. NLP Services</a></h3>
-<div class="paragraph">
-<p>Midas Loop is able to contact <em>NLP services</em> via HTTP in order to get machine learning model outputs for certain kinds of annotations.
-NLP services work by waiting to be contacted by the Midas Loop server, which will contact the service when it needs fresh label distributions for a given annotation type.</p>
-</div>
-<div class="paragraph">
-<p>Specifically, Midas Loop is able to accommodate outputs for sentence splits (i.e., token-level classification of whether a particular token is the beginning of a new sentence) as well as UPOS, XPOS, and HEAD annotations.
-For each of these annotation types, it is expected that a service will be able to take a sentence as input and provide a list of <em>probability distribution</em> over labels, one distribution per token.</p>
-</div>
-<div class="sect3">
-<h4 id="_inputs"><a class="anchor" href="#_inputs"></a><a class="link" href="#_inputs">3.3.1. Inputs</a></h4>
-<div class="paragraph">
-<p>The service should be listening for POST requests at <code>/</code>, and can expect that the JSON payload will include the keys <code>conllu</code> and <code>json</code>: the <code>conllu</code> key will have the stringified CoNLL-U representation of the sentence, and the <code>json</code> key will have Midas Loop&#8217;s verbose internal representation of the sentence.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_outputs"><a class="anchor" href="#_outputs"></a><a class="link" href="#_outputs">3.3.2. Outputs</a></h4>
-<div class="paragraph">
-<p>The service should respond with a JSON in the response body with a single key, <code>probabilities</code>.
-The value associated with this key should be a list of objects (= Python dicts) where each object holds key-value pairs expressing labels' probabilities as predicted by the model for the corresponding token at that position.
-Values should sum to 1.</p>
-</div>
-<div class="paragraph">
-<p>For any input sentence, the number of output label distributions must <strong>exactly</strong> match the expected numbers.
-For UPOS, XPOS, and HEAD, this is the number of normal tokens or ellipsis tokens, and for sentence splits, this is the number of normal tokens.
-Model outputs will be rejected if the expected number of label distributions is not met.</p>
-</div>
-<div class="sect4">
-<h5 id="_label_value_requirements"><a class="anchor" href="#_label_value_requirements"></a><a class="link" href="#_label_value_requirements">Label Value Requirements</a></h5>
-<div class="paragraph">
-<p>For UPOS and XPOS, any label is acceptable, but HEAD and sentence splits require careful attention to labels:</p>
-</div>
-<div class="ulist">
-<ul>
-<li>
-<p>For HEAD, labels <strong>must</strong> be the internal IDs for tokens provided in the <code>json</code> input representation, i.e. UUIDs such as <code>013769d9-dc90-4278-9bc2-5d6a9f96d0fc</code> instead of CoNLL-U IDs like <code>3</code> or <code>11.2</code>.
-The only exception is the string value <code>"root"</code>, used to indicate the root of the sentence.</p>
-</li>
-<li>
-<p>For sentence splits, labels <strong>must</strong> be either <code>"B"</code> or <code>"O"</code>, where <code>"B"</code> indicates the beginning of a new sentence.</p>
-</li>
-</ul>
-</div>
-<div class="admonitionblock warning">
-<table>
-<tr>
-<td class="icon">
-<div class="title">Warning</div>
-</td>
-<td class="content">
-Be sure that you are using the ID for the <strong>token</strong> entity in the JSON, and not the <strong>head</strong> entity in the JSON, when providing your outputs.
-</td>
-</tr>
-</table>
-</div>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_service_registration"><a class="anchor" href="#_service_registration"></a><a class="link" href="#_service_registration">3.3.3. Service Registration</a></h4>
-<div class="paragraph">
-<p>NLP services will not be contacted unless Midas Loop is told about them. See <code>:nlp-services</code> in <a href="#_configuration">Configuration</a>.</p>
-</div>
-</div>
-<div class="sect3">
-<h4 id="_example"><a class="anchor" href="#_example"></a><a class="link" href="#_example">3.3.4. Example</a></h4>
-<div class="paragraph">
-<p>Consider a sample XPOS tagging service at <a href="https://github.com/gucorpling/midas-loop/blob/master/services/sample_xpos.py"><code>services/sample_xpos.py</code></a>.
-This is a barebones HTTP service implemented using Flask which loads a pretrained English part of speech tagger from spaCy and uses it to respond to requests.
-It listens for a POST request, and when it receives it, uses the model to parse the CoNLL-U string and recover the probabilities from the model&#8217;s outputs.
-Note that the model is initialized globally so that it may reside in memory in between requests.</p>
-</div>
-</div>
-</div>
-<div class="sect2">
-<h3 id="_configuration"><a class="anchor" href="#_configuration"></a><a class="link" href="#_configuration">3.4. Configuration</a></h3>
+<h3 id="_configuration"><a class="anchor" href="#_configuration"></a><a class="link" href="#_configuration">2.2. Configuration</a></h3>
 <div class="paragraph">
 <p>By default, the uberjar will use its copy of the config located at <a href="https://github.com/gucorpling/midas-loop/blob/master/env/prod/resources/config.edn"><code>env/prod/resources/config.edn</code></a>.
 If you wish to customize this, specify another config using <code>-Dconf=&#8230;&#8203;</code>:</p>
@@ -748,32 +702,299 @@ Localhost and the main origin are always allowed regardless of this item&#8217;s
 </tbody>
 </table>
 </div>
-</div>
-</div>
-<div class="sect1">
-<h2 id="_operation"><a class="anchor" href="#_operation"></a><a class="link" href="#_operation">4. Operation</a></h2>
-<div class="sectionbody">
 <div class="sect2">
-<h3 id="_importing"><a class="anchor" href="#_importing"></a><a class="link" href="#_importing">4.1. Importing</a></h3>
+<h3 id="_authorization"><a class="anchor" href="#_authorization"></a><a class="link" href="#_authorization">2.3. Authorization</a></h3>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+Midas Loop&#8217;s authorization scheme is primitive and vulnerable to attack, and is therefore only useful for preventing low-effort unauthorized access.
+You SHOULD NOT store sensitive data in a Midas Loop system.
+</td>
+</tr>
+</table>
+</div>
+<div class="sect3">
+<h4 id="_granting"><a class="anchor" href="#_granting"></a><a class="link" href="#_granting">2.3.1. Granting</a></h4>
+<div class="paragraph">
+<p>Token-based authorization is used.
+Each user should have a token made for them, like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>java -jar midas-loop.jar token add --name "Sam Doe" --email "sd42@gmail.com" --quality "gold"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Give your user their token and instruct them to keep it secret.</p>
+</div>
+<div class="paragraph">
+<p>If you are using a non-standard configuration using <code>java -Dconf=&#8230;&#8203;</code>, <strong>be sure to include it</strong> during import.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_listing"><a class="anchor" href="#_listing"></a><a class="link" href="#_listing">2.3.2. Listing</a></h4>
+<div class="paragraph">
+<p>You can see all valid tokens with <code>java -jar midas-loop.jar token list</code>.</p>
+</div>
+<div class="paragraph">
+<p>If you are using a non-standard configuration using <code>java -Dconf=&#8230;&#8203;</code>, <strong>be sure to include it</strong> during import.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_revoking"><a class="anchor" href="#_revoking"></a><a class="link" href="#_revoking">2.3.3. Revoking</a></h4>
+<div class="paragraph">
+<p>You can revoke a token like so:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>java -jar midas-loop.jar token revoke --secret "gold;secret=84EO60tU6lhcBhplbuEEGElECuh1yZod8fTCn6DqkQA"</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you are using a non-standard configuration using <code>java -Dconf=&#8230;&#8203;</code>, <strong>be sure to include it</strong> during import.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_importing"><a class="anchor" href="#_importing"></a><a class="link" href="#_importing">2.4. Importing</a></h3>
+<div class="paragraph">
+<p>Use the <code>import</code> subcommand and supply it with a directory path.
+The directory will be recursively searched for files ending in <code>.conllu</code> and each will be loaded into the database.
+Example invocation:</p>
+</div>
 <div class="paragraph">
 <p><code>java -jar midas-loop.jar import dir/with/conllu-files/</code></p>
 </div>
+<div class="paragraph">
+<p>If you are using a non-standard configuration using <code>java -Dconf=&#8230;&#8203;</code>, <strong>be sure to include it</strong> during import.</p>
+</div>
 </div>
 <div class="sect2">
-<h3 id="_api"><a class="anchor" href="#_api"></a><a class="link" href="#_api">4.2. API</a></h3>
+<h3 id="_exporting"><a class="anchor" href="#_exporting"></a><a class="link" href="#_exporting">2.5. Exporting</a></h3>
 <div class="paragraph">
-<p>Run your server and see <code>/swagger-ui/</code>.</p>
+<p>Use the <code>export</code> subcommand and provide it with a directory path.
+A separate <code>.conllu</code> file for each document will be created directly under that directory.
+Example invocation:</p>
 </div>
 <div class="paragraph">
-<p>TODO: add detail</p>
+<p><code>java -jar midas-loop.jar export output/dir/</code></p>
+</div>
+<div class="paragraph">
+<p>If you are using a non-standard configuration using <code>java -Dconf=&#8230;&#8203;</code>, <strong>be sure to include it</strong> during import.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_nlp_services"><a class="anchor" href="#_nlp_services"></a><a class="link" href="#_nlp_services">2.6. NLP Services</a></h3>
+<div class="paragraph">
+<p>Midas Loop is able to contact <em>NLP services</em> via HTTP in order to get machine learning model outputs for certain kinds of annotations.
+NLP services work by waiting to be contacted by the Midas Loop server, which will contact the service when it needs fresh label distributions for a given annotation type.</p>
+</div>
+<div class="paragraph">
+<p>Specifically, Midas Loop is able to accommodate outputs for sentence splits (i.e., token-level classification of whether a particular token is the beginning of a new sentence) as well as UPOS, XPOS, and HEAD annotations.
+For each of these annotation types, it is expected that a service will be able to take a sentence as input and provide a list of <em>probability distribution</em> over labels, one distribution per token.</p>
 </div>
 <div class="sect3">
-<h4 id="_upload"><a class="anchor" href="#_upload"></a><a class="link" href="#_upload">4.2.1. Upload</a></h4>
-
+<h4 id="_inputs"><a class="anchor" href="#_inputs"></a><a class="link" href="#_inputs">2.6.1. Inputs</a></h4>
+<div class="paragraph">
+<p>The service should be listening for POST requests at <code>/</code>, and can expect that the JSON payload will include the keys <code>conllu</code> and <code>json</code>: the <code>conllu</code> key will have the stringified CoNLL-U representation of the sentence, and the <code>json</code> key will have Midas Loop&#8217;s verbose internal representation of the sentence.</p>
+</div>
 </div>
 <div class="sect3">
-<h4 id="_diffing"><a class="anchor" href="#_diffing"></a><a class="link" href="#_diffing">4.2.2. Diffing</a></h4>
-
+<h4 id="_outputs"><a class="anchor" href="#_outputs"></a><a class="link" href="#_outputs">2.6.2. Outputs</a></h4>
+<div class="paragraph">
+<p>The service should respond with a JSON in the response body with a single key, <code>probabilities</code>.
+The value associated with this key should be a list of objects (= Python dicts) where each object holds key-value pairs expressing labels' probabilities as predicted by the model for the corresponding token at that position.
+Values should sum to 1.</p>
+</div>
+<div class="paragraph">
+<p>For any input sentence, the number of output label distributions must <strong>exactly</strong> match the expected numbers.
+For UPOS, XPOS, and HEAD, this is the number of normal tokens or ellipsis tokens, and for sentence splits, this is the number of normal tokens.
+Model outputs will be rejected if the expected number of label distributions is not met.</p>
+</div>
+<div class="sect4">
+<h5 id="_label_value_requirements"><a class="anchor" href="#_label_value_requirements"></a><a class="link" href="#_label_value_requirements">Label Value Requirements</a></h5>
+<div class="paragraph">
+<p>For UPOS and XPOS, any label is acceptable, but HEAD and sentence splits require careful attention to labels:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>For HEAD, labels <strong>must</strong> be the internal IDs for tokens provided in the <code>json</code> input representation, i.e. UUIDs such as <code>013769d9-dc90-4278-9bc2-5d6a9f96d0fc</code> instead of CoNLL-U IDs like <code>3</code> or <code>11.2</code>.
+The only exception is the string value <code>"root"</code>, used to indicate the root of the sentence.</p>
+</li>
+<li>
+<p>For sentence splits, labels <strong>must</strong> be either <code>"B"</code> or <code>"O"</code>, where <code>"B"</code> indicates the beginning of a new sentence.</p>
+</li>
+</ul>
+</div>
+<div class="admonitionblock warning">
+<table>
+<tr>
+<td class="icon">
+<div class="title">Warning</div>
+</td>
+<td class="content">
+Be sure that you are using the ID for the <strong>token</strong> entity in the JSON, and not the <strong>head</strong> entity in the JSON, when providing your outputs.
+</td>
+</tr>
+</table>
+</div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_service_registration"><a class="anchor" href="#_service_registration"></a><a class="link" href="#_service_registration">2.6.3. Service Registration</a></h4>
+<div class="paragraph">
+<p>NLP services will not be contacted unless Midas Loop is told about them. See <code>:nlp-services</code> in <a href="#_configuration">Configuration</a>.</p>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_example"><a class="anchor" href="#_example"></a><a class="link" href="#_example">2.6.4. Example</a></h4>
+<div class="paragraph">
+<p>Consider a sample XPOS tagging service at <a href="https://github.com/gucorpling/midas-loop/blob/master/services/sample_xpos.py"><code>services/sample_xpos.py</code></a>.
+This is a barebones HTTP service implemented using Flask which loads a pretrained English part of speech tagger from spaCy and uses it to respond to requests.
+It listens for a POST request, and when it receives it, uses the model to parse the CoNLL-U string and recover the probabilities from the model&#8217;s outputs.
+Note that the model is initialized globally so that it may reside in memory in between requests.</p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_running"><a class="anchor" href="#_running"></a><a class="link" href="#_running">2.7. Running</a></h3>
+<div class="paragraph">
+<p>Simply <code>java -Dconf=&#8230;&#8203; -jar midas-loop.jar run</code> once you are satisfied with your configuration.
+Be sure that any required NLP services are running as well.
+To stop the server, interrupt it with <code>CTRL+C</code>.
+Avoid killing the process, as this may corrupt the database.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_clearing_database_files"><a class="anchor" href="#_clearing_database_files"></a><a class="link" href="#_clearing_database_files">2.8. Clearing Database Files</a></h3>
+<div class="paragraph">
+<p>All data is stored on-disk: authorization information is by default stored at <code>xtdb_token_data</code>, and all other information is stored at <code>xtdb_data</code>.
+If you wish to clear either database, you may simply delete the relevant folder&#8212;&#8203;just make sure that the system is <strong>not running</strong> before you do so, and next time the system starts, the folder will be regenerated.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_changelog"><a class="anchor" href="#_changelog"></a><a class="link" href="#_changelog">3. Changelog</a></h2>
+<div class="sectionbody">
+<h3 id="_0_0_1" class="discrete">0.0.1</h3>
+<div class="paragraph">
+<p><em>Initial Release</em></p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_development"><a class="anchor" href="#_development"></a><a class="link" href="#_development">4. Development</a></h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p><a href="https://leiningen.org/">Leiningen</a> is used to build code.</p>
+</div>
+<div class="sect2">
+<h3 id="_dev_server"><a class="anchor" href="#_dev_server"></a><a class="link" href="#_dev_server">4.1. Dev Server</a></h3>
+<div class="paragraph">
+<p>Run <code>lein repl</code> in order to get a dev REPL, then execute <code>(start)</code> in the prompt.
+<code>(stop)</code> and <code>(restart)</code> are also available in the REPL.
+This will use the config at <code>env/dev/resources/config.edn</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_testing"><a class="anchor" href="#_testing"></a><a class="link" href="#_testing">4.2. Testing</a></h3>
+<div class="paragraph">
+<p>Run <code>lein test</code>.
+This will use the config at <code>env/test/resources/config.edn</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_production_build"><a class="anchor" href="#_production_build"></a><a class="link" href="#_production_build">4.3. Production Build</a></h3>
+<div class="sect3">
+<h4 id="_build_the_client"><a class="anchor" href="#_build_the_client"></a><a class="link" href="#_build_the_client">4.3.1. Build the Client</a></h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Clone <a href="https://github.com/gucorpling/midas-loop-ui">midas-loop-ui</a>.</p>
+</li>
+<li>
+<p>Examine and modify the contents of <code>webpack.prod.js</code>, specifically the <a href="https://github.com/gucorpling/midas-loop-ui/blob/2bfe96b3cc640585bf017fd02eaccdea22ab500b/webpack.prod.js#L80L87">definitions</a>.
+You must at least provide a new value for <code>API_ENDPOINT</code>, which should match the URL at which your Midas Loop backend system will be reachable.
+For example, if you have a machine reachable at <code><a href="http://my.university.edu" class="bare">my.university.edu</a></code>, and the Midas Loop backend system is exposed on port <code>3000</code>, your <code>API_ENDPOINT</code> should be set to <code><a href="http://my.university.edu:3000/api" class="bare">my.university.edu:3000/api</a></code>.
+You may also wish to customize <code>XPOS_LABELS</code> and <code>DEPREL_LABELS</code>.</p>
+</li>
+<li>
+<p>Install dependencies: <code>yarn</code></p>
+</li>
+<li>
+<p>Compile assets for production deployment: <code>yarn build</code></p>
+</li>
+<li>
+<p>Ensure that assets were successfully compiled at <code>dist/</code></p>
+</li>
+</ol>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_build_the_server"><a class="anchor" href="#_build_the_server"></a><a class="link" href="#_build_the_server">4.3.2. Build the Server</a></h4>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>Clone <a href="https://github.com/gucorpling/midas-loop">midas-loop</a>.</p>
+</li>
+<li>
+<p>Move the <em>contents</em> of the <code>dist/</code> folder you just created into <code>resources/public/</code>.
+The <code>.js</code> files, etc. should be directly in the <code>resources/public/</code> folder, not in <code>resources/public/dist/</code>.</p>
+</li>
+<li>
+<p>Compile an <em>uberjar</em> with <code>lein uberjar</code>.
+This will produce a standalone JAR ready for distribution and execution via <code>java -jar</code>.
+Unless overridden, this will use the config at <code>env/prod/resources/config.edn</code>.</p>
+</li>
+<li>
+<p>Verify that the uberjar was produced successfully by running <code>java -jar target/uberjar/midas-loop.jar</code>.
+This <code>.jar</code> is the only artefact you will need to deploy.</p>
+</li>
+</ol>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_building_docs"><a class="anchor" href="#_building_docs"></a><a class="link" href="#_building_docs">4.4. Building Docs</a></h3>
+<div class="paragraph">
+<p>Install <a href="https://docs.asciidoctor.org/asciidoctor/latest/install/">Asciidoctor</a>, then:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code>asciidoctor-pdf -o target/book.pdf -b pdf -r asciidoctor-diagram docs/book.adoc
+asciidoctor -o target/book.html -b html -r asciidoctor-diagram docs/book.adoc</code></pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_version_bump_checklist"><a class="anchor" href="#_version_bump_checklist"></a><a class="link" href="#_version_bump_checklist">4.5. Version Bump Checklist</a></h3>
+<div class="paragraph">
+<p>Always do the following:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>Change version number in <a href="https://github.com/gucorpling/midas-loop/blob/master/project.clj#L1">project.clj</a>.</p>
+</li>
+<li>
+<p>Change version number in <a href="https://github.com/gucorpling/midas-loop/blob/master/src/midas_loop/core.clj#L100">core.clj</a>.</p>
+</li>
+<li>
+<p>Ensure that <a href="#_changelog">Changelog</a> and <a href="#_introduction">Introduction</a> are up to date.</p>
+</li>
+<li>
+<p>Compile and push the latest docs.</p>
+</li>
+<li>
+<p>Make a GitHub release with the appropriate version number <strong>and</strong> with an accompanying uberjar.</p>
+</li>
+</ul>
 </div>
 </div>
 </div>
@@ -781,7 +1002,7 @@ Localhost and the main origin are always allowed regardless of this item&#8217;s
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2022-05-19 17:36:45 -0400
+Last updated 2022-06-15 14:22:16 -0400
 </div>
 </div>
 </body>
