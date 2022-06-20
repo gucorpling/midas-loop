@@ -9,9 +9,37 @@ import spacy
 from time import sleep
 
 app = Flask(__name__)
+
+def softmax(x, axis=None):
+    x = x - x.max(axis=axis, keepdims=True)
+    y = np.exp(x)
+    return y / y.sum(axis=axis, keepdims=True)
+
+class WhitespaceTokenizer:
+    def __init__(self, vocab):
+        self.vocab = vocab
+
+    def __call__(self, text):
+        words = text.split(" ")
+        spaces = [True] * len(words)
+        # Avoid zero-length tokens
+        for i, word in enumerate(words):
+            if word == "":
+                words[i] = " "
+                spaces[i] = False
+        # Remove the final trailing space
+        if words[-1] == " ":
+            words = words[0:-1]
+            spaces = spaces[0:-1]
+        else:
+           spaces[-1] = False
+
+        return spacy.tokens.Doc(self.vocab, words=words, spaces=spaces)
+
+
 MODEL = spacy.load("en_core_web_sm")
 TAGGER = MODEL.get_pipe("tagger")
-
+MODEL.tokenizer = WhitespaceTokenizer(MODEL.vocab)
 
 def is_supertoken(t):
     return isinstance(t["id"], Iterable) and t["id"][1] == "-"
@@ -34,11 +62,14 @@ def tag_conllu(conllu_sentence: str):
     # Supertokens are filtered out of the sentence since they are not valid targets for annotation.
     sentence = [t for t in sentence if not is_supertoken(t)]
     # Make a spacy doc from the token forms
-    doc = spacy.tokens.Doc(MODEL.vocab, words=[t["form"] for t in sentence])
+    #doc = spacy.tokens.Doc(MODEL.vocab, words=[t["form"] for t in sentence], spaces=spaces)
+    doc = MODEL(" ".join([t["form"] for t in sentence]))
 
     # Get probabilities from the tagger
     # float32 isn't JSON serializable by Python's `json` module--make it 64
     token_probas = np.float64(TAGGER.model.predict([doc])[0])
+    token_probas = softmax(token_probas, axis=1)
+
     # Merge probabilities with the class labels
     labels = TAGGER.labels
 
@@ -82,4 +113,4 @@ def debug():
 
 if __name__ == "__main__":
     app.run(host="localhost", port=5555)
-    # debug()
+    #debug()
