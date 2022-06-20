@@ -12,12 +12,12 @@ def get_head_probas(sentence):
     # "token-type" can be "super", "empty", or "token"--we want everything that's not a supertoken
     tokens = [t for t in sentence["sentence/tokens"] if t["token/token-type"] != "super"]
     token_forms = [t["token/form"]["form/value"] for t in tokens]
-    potential_heads = ["root"] + [t["token/id"] for t in tokens]
 
     labels = []
     for token in tokens:
         remainder = 1
         probs = []
+        potential_heads = ["root"] + [t["token/id"] for t in tokens if t["token/id"] != token["token/id"]]
         for _ in potential_heads:
             prob = random.random() * remainder
             probs.append(prob)
