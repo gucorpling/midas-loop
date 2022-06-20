@@ -68,6 +68,11 @@
                                              id
                                              v)))))))))
 
+(defn filter-relevant-tokens [anno-type tokens]
+  (if (= :sentence anno-type)
+    (filterv #(= :token (:token/token-type %)) tokens)
+    (filterv #(not= :super (:token/token-type %)) tokens)))
+
 (defn validate
   "Given an annotation type, a sentence, and the data we got back from a service, produce a :status where:
   - :dne means the sentence does not exist
@@ -78,9 +83,7 @@
     {:status :dne}
     ;; Sentence split probas: only for plain tokens
     ;; Other probas: for all but supertokens
-    (let [tokens (if (= :sentence anno-type)
-                   (filterv #(= :token (:token/token-type %)) tokens)
-                   (filterv #(not= :super (:token/token-type %)) tokens))]
+    (let [tokens (filter-relevant-tokens anno-type tokens)]
       (if-let [parsed-data (parse-response data id (count tokens))]
         {:status :ok :data parsed-data}
         {:status :bad-data}))))
@@ -132,6 +135,7 @@
                     (log/info "Retrying...")
                     (recur))
                   ;; success: write em!
-                  (let [pairs (partition 2 (interleave tokens (data "probabilities")))
+                  (let [tokens (filter-relevant-tokens anno-type tokens)
+                        pairs (partition 2 (interleave tokens (data "probabilities")))
                         probas-key (keyword (name anno-type) "probas")]
                     (nlpc/write-probas node probas-key pairs)))))))))
