@@ -98,13 +98,22 @@
             true)]
     (loop []
       (let [document-id (cxq/parent node :document/sentences sentence-id)
+            {:document/keys [sentences]} (cxe/entity node document-id)
+            sentence-index (loop [[head & rest] sentences
+                                  i 0]
+                             (cond
+                               ;; don't need a base case since we know it's in here
+                               ;; (nil? head) ...
+                               (= sentence-id head) i
+                               :else (recur rest (inc i))))
             {:keys [status body]}
             (try
               ;; Parse the body manually later
               (binding [client/*current-middleware* (filterv #(not= % client/wrap-output-coercion) client/default-middleware)]
-                (client/post url {:form-params   {:conllu      (.toString (serialization/serialize-sentence node sentence-id))
-                                                  :json        (cxq/pull2 node :sentence/id sentence-id)
-                                                  :full_conllu (.toString (serialization/serialize-document node document-id))}
+                (client/post url {:form-params   {:conllu         (.toString (serialization/serialize-sentence node sentence-id))
+                                                  :json           (cxq/pull2 node :sentence/id sentence-id)
+                                                  :full_conllu    (.toString (serialization/serialize-document node document-id))
+                                                  :sentence_index sentence-index}
                                   :content-type  :json
                                   :retry-handler retry}))
               (catch Exception e
