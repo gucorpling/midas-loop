@@ -97,7 +97,7 @@
 (def cli-config
   {:app         {:command     "midas-loop"
                  :description "https://github.com/gucorpling/midas-loop"
-                 :version     "0.0.1-rc1"}
+                 :version     "0.0.1-rc2"}
    :global-opts []
    :commands    [;; main method--run the HTTP server
                  {:command     "run"
