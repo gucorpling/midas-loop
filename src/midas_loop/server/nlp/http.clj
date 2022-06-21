@@ -14,25 +14,45 @@
 
 (declare get-probas validate parse-response)
 
+
+;; timing helpers
+(def time-estimate-memory (or (System/getProperty "time-estimate-memory") 20))
+(def timing-atoms (atom {}))
+(defn record-time [anno-type ms]
+  (swap! timing-atoms (fn [a]
+                        (update a anno-type (fn [times]
+                                              (take time-estimate-memory
+                                                    (conj times ms)))))))
+(defn time-estimate [anno-type]
+  (let [times (vec (anno-type @timing-atoms))]
+    (if (empty? times)
+      nil
+      (float (/ (apply + times)
+                (count times)
+                1000)))))
+
 (defrecord HttpProbDistProvider [config]
   SentenceLevelProbDistProvider
   (predict-prob-dists
     [this node sentence-id]
-    (let [{:keys [url anno-type]} config]
+    (let [start-time (System/currentTimeMillis)
+          {:keys [url anno-type]} config]
       (if-let [sentence (cxe/entity node sentence-id)]
         (let [document-id (ffirst (xt/q (xt/db node)
                                         {:find  ['?d]
                                          :where '[[?d :document/sentences ?s]]
                                          :in    ['?s]}
                                         sentence-id))
-              start (System/currentTimeMillis)
               _ (get-probas node url anno-type sentence-id)
-              end (System/currentTimeMillis)
               _ (complete-job node anno-type sentence-id)
               remaining (count (get-sentence-ids-to-process node anno-type))]
-          (log/info (str "Completed " anno-type " job. " remaining " remaining."
-                         " Est. time remaining: " (format "%.2f" (/ (* remaining (- end start)) 1000.)) " seconds."))
           (cxqd/calculate-stats node document-id)
+          (let [run-time (- (System/currentTimeMillis) start-time)]
+            (record-time anno-type run-time)
+            (log/info
+              (str "Completed " anno-type " job in " (format "%.2f" (/ (float run-time) 1000)) "ms. "
+                   remaining " jobs remaining."
+                   " Est. time remaining: " (format "%.2f" (* remaining (time-estimate anno-type))) " seconds.")))
           this)
         (do
           (log/info (str "Sentence " sentence-id " appears to have been deleted before it was able to be processed."
