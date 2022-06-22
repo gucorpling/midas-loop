@@ -29,7 +29,7 @@ def is_plain_token(t):
     return not isinstance(t["id"], Iterable)
 
 
-def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: int=10):
+def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: int=10, sentence_index: int=-1):
     """
     Given a document in a dictionary representing midas-loop json format,
     return probabilities that each token begins a new sentence (B) or not (O).
@@ -46,12 +46,16 @@ def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: i
     #sys.stderr.write(sent_conllu + "\n")
 
     # TODO: remove hack for detecting sentence token offset position in doc conllu
-    for sent in parsed:
+    for i, sent in enumerate(parsed):
         if target_begin != -1 and target_end == -1:  # Beginning already set and new sent has started
             target_end = toknum
-        if sent.metadata["sent_id"] + "\n" in sent_conllu:  # This is the target sent
-            #sys.stderr.write("Found ID "+ sent.metadata["sent_id"] + "\n")
-            target_begin = toknum
+        if sentence_index > -1:  # System specified ordinal sentence index
+            if i == sentence_index:
+                target_begin = toknum
+        else:
+            if sent.metadata["sent_id"] + "\n" in sent_conllu:  # This is the target sent
+                #sys.stderr.write("Found ID "+ sent.metadata["sent_id"] + "\n")
+                target_begin = toknum
         for tok in sent:
             if not is_supertoken(tok) and not is_ellipsis(tok):
                 toknum += 1
@@ -122,7 +126,7 @@ def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: i
 @app.route("/", methods=["POST"])
 def get():
     data = request.json
-    return json.dumps({"probabilities": ssplit(data["full_conllu"],data["conllu"])})
+    return json.dumps({"probabilities": ssplit(data["full_conllu"],data["conllu"],sentence_index=data["sentence_index"])})
 
 
 null = None
