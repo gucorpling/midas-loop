@@ -102,10 +102,10 @@ def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: i
     for idx in final_mapping:
         snum, position = final_mapping[idx]
         if str(flair.__version__).startswith("0.4"):
-            pred_tag = spans[snum].tokens[position].tags["ner"].value
+            pred_tag = spans[snum].tokens[position].tags["ner"].value.replace("-SENT","")
             pred_proba = spans[snum].tokens[position].tags["ner"].score
         else:
-            pred_tag = spans[snum].tokens[position].labels[0].value
+            pred_tag = spans[snum].tokens[position].labels[0].value.replace("-SENT","")
             pred_proba = spans[snum].tokens[position].labels[0].score
         other_tag = "B" if pred_tag == "O" else "O"
         other_proba = 1-pred_proba
