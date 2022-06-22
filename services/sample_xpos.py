@@ -10,6 +10,12 @@ from time import sleep
 
 app = Flask(__name__)
 
+def softmax(x, axis=None):
+    x = x - x.max(axis=axis, keepdims=True)
+    y = np.exp(x)
+    return y / y.sum(axis=axis, keepdims=True)
+
+
 class WhitespaceTokenizer:
     def __init__(self, vocab):
         self.vocab = vocab
@@ -63,7 +69,7 @@ def tag_conllu(conllu_sentence: str):
     # Get probabilities from the tagger
     # float32 isn't JSON serializable by Python's `json` module--make it 64
     token_probas = np.float64(TAGGER.model.predict([doc])[0])
-    normalized_token_probas = [np.interp(a, (a.min(), a.max()), (0, 1)) for a in token_probas]
+    normalized_token_probas = softmax(token_probas, axis=1)
 
     # Merge probabilities with the class labels
     labels = TAGGER.labels
