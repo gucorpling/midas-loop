@@ -50,7 +50,7 @@
           (let [run-time (- (System/currentTimeMillis) start-time)]
             (record-time anno-type run-time)
             (log/info
-              (str "Completed " anno-type " job in " (format "%.2f" (/ (float run-time) 1000)) "ms. "
+              (str "Completed " anno-type " job in " (format "%.2f" (/ (float run-time) 1000)) "s. "
                    remaining " jobs remaining."
                    " Est. time remaining: " (format "%.2f" (* remaining (time-estimate anno-type))) " seconds.")))
           this)
