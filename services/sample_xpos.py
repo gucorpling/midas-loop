@@ -71,7 +71,7 @@ def tag_conllu(conllu_sentence: str):
     # Make label-proba pairs and sort them
     with_labels = [
         {label: proba for label, proba in zip(labels, probas)}
-        for probas in token_probas
+        for probas in normalized_token_probas
     ]
     return with_labels
 
