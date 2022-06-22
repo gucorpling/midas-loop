@@ -29,7 +29,7 @@
     <logger name="io.undertow.websockets.core.request" level="warn" />
     <logger name="io.undertow.request" level="info" />
     <logger name="io.undertow.session" level="warn" />
-    <logger name="xtdb" level="debug" />
+    <logger name="xtdb" level="info" />
     <logger name="org.eclipse" level="info" />
     <root level="DEBUG">
         <appender-ref ref="STDOUT" />
