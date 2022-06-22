@@ -38,14 +38,30 @@ def get_head_probas(sentence: dict):
     id_mapping[0] = "root"
     # Get probabilities from the parser
     dataset = PARSER.predict([forms], prob=True)
+    prob_matrix = dataset.sentences[0].probs.numpy()
+
+    # Get parser's final tree
+    conllu_pred = str(dataset.sentences[0])
+    chosen_headmap = {}
+    chosen_probas = {}
+    toknum = 0
+    for line in conllu_pred.strip().split("\n"):
+        if "\t" in line:
+            fields = line.split("\t")
+            head = int(fields[6])
+            chosen_headmap[toknum] = head
+            chosen_probas[toknum] = np.float64(prob_matrix[toknum][head])
+            toknum +=1
 
     # Format probabilities
-    prob_matrix = dataset.sentences[0].probs.numpy()
     output = []
     for tok_idx, probas in enumerate(prob_matrix):
         pred_proba = {}
         for head_idx, j in enumerate(probas):
             pred_proba[id_mapping[head_idx]] = np.float64(j)  # float32 isn't JSON serializable by Python's `json` module--make it 64
+            if pred_proba[id_mapping[head_idx]] > chosen_probas[tok_idx]:
+                # Make sure unchosen heads never exceed chosen head probabilities
+                pred_proba[id_mapping[head_idx]] = chosen_probas[tok_idx] - 0.0001
         output.append(pred_proba)
 
     return output
