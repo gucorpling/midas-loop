@@ -1,3 +1,15 @@
+"""
+Note: this module requires a privately trained model and some very specific package versions.
+In order to run it, first install the packages:
+
+    pip install "torch<1.6" "flair==0.6.1" "transformers==3.5.1" "flask" "protobuf<3.21"
+
+Then download our model:
+
+    https://drive.google.com/file/d/1UfWKc-Qg122xJGHcSym-jRVFyffuufXQ/view?usp=sharing
+
+and place it in the working directory you intend to run this script from.
+"""
 from collections.abc import Iterable
 import json, sys
 from flask import Flask, request
