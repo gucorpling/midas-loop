@@ -107,7 +107,7 @@ def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: i
         else:
             pred_tag = spans[snum].tokens[position].labels[0].value
             pred_proba = spans[snum].tokens[position].labels[0].score
-        other_tag = "B-SENT" if pred_tag == "O" else "O"
+        other_tag = "B" if pred_tag == "O" else "O"
         other_proba = 1-pred_proba
         tid = ids[idx]
 
