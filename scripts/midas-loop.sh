@@ -14,12 +14,12 @@ trap cleanup EXIT
 
 # Check existence of files
 if [[ ! -f "midas-loop.jar" ]]; then 
-  echo "Please place midas-loop.jar at ./midas-loop.jar"
-  exit 2
+  echo "Did not find midas-loop.jar. Downloading at ./midas-loop.jar"
+  curl -L "https://github.com/gucorpling/midas-loop/releases/download/v0.0.1-rc2/midas-loop-v0.0.1-rc2.jar" -o "midas-loop.jar"
 fi
 if [[ ! -f "config.edn" ]]; then 
-  echo "Please supply a config at ./config.edn"
-  exit 2
+  echo "Did not find config.edn. Downloading at ./config.edn"
+  curl -L "https://raw.githubusercontent.com/gucorpling/midas-loop/v0.0.1-rc2/env/prod/resources/config.edn" -o "config.edn"
 fi
 
 # start services

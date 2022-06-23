@@ -263,6 +263,7 @@ Always do the following:
 * Change version number in https://github.com/gucorpling/midas-loop/blob/master/project.clj#L1[project.clj].
 * Change version number in https://github.com/gucorpling/midas-loop/blob/master/src/midas_loop/core.clj#L100[core.clj].
 * Change version number in https://github.com/gucorpling/midas-loop-ui/blob/master/package.json#L3[package.json].
+* Change links in https://github.com/gucorpling/midas-loop/blob/master/scripts/midas-loop.sh[midas-loop.sh].
 * Ensure that <<Changelog>> and <<Introduction>> are up to date.
 * Compile and push the latest docs.
 * Make a GitHub release with the appropriate version number **and** with an accompanying uberjar.
