@@ -41,6 +41,7 @@ class WhitespaceTokenizer:
 MODEL = spacy.load("en_core_web_sm")
 TAGGER = MODEL.get_pipe("tagger")
 MODEL.tokenizer = WhitespaceTokenizer(MODEL.vocab)
+NORMALIZE_WITH_SOFTMAX = False
 
 def is_supertoken(t):
     return isinstance(t["id"], Iterable) and t["id"][1] == "-"
@@ -58,6 +59,7 @@ def tag_conllu(conllu_sentence: str):
     """
     Given an English sentence in conllu format, return POS tag probabilities for each token.
     """
+    global NORMALIZE_WITH_SOFTMAX
     # Parse the string and take its first sentence (the string only has one sentence)
     sentence = conllu.parse(conllu_sentence)[0]
     # Supertokens are filtered out of the sentence since they are not valid targets for annotation.
@@ -69,8 +71,13 @@ def tag_conllu(conllu_sentence: str):
     # Get probabilities from the tagger
     # float32 isn't JSON serializable by Python's `json` module--make it 64
     token_probas = np.float64(TAGGER.model.predict([doc])[0])
-    normalized_token_probas = softmax(token_probas, axis=1)
-    #normalized_token_probas = [a / a.sum() for a in token_probas]
+    if any(token_probas < 0):
+        NORMALIZE_WITH_SOFTMAX = True
+        print("Negative probability detected! We're probably getting logits instead. Normalizing with softmax.")
+    if NORMALIZE_WITH_SOFTMAX:
+        normalized_token_probas = softmax(token_probas, axis=1)
+    else:
+        normalized_token_probas = [a / a.sum() for a in token_probas]
 
     # Merge probabilities with the class labels
     labels = TAGGER.labels
