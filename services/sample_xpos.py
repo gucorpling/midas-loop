@@ -69,8 +69,8 @@ def tag_conllu(conllu_sentence: str):
     # Get probabilities from the tagger
     # float32 isn't JSON serializable by Python's `json` module--make it 64
     token_probas = np.float64(TAGGER.model.predict([doc])[0])
-    #normalized_token_probas = softmax(token_probas, axis=1)
-    normalized_token_probas = [a / a.sum() for a in token_probas]
+    normalized_token_probas = softmax(token_probas, axis=1)
+    #normalized_token_probas = [a / a.sum() for a in token_probas]
 
     # Merge probabilities with the class labels
     labels = TAGGER.labels
