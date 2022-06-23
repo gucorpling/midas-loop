@@ -71,7 +71,7 @@ def tag_conllu(conllu_sentence: str):
     # Get probabilities from the tagger
     # float32 isn't JSON serializable by Python's `json` module--make it 64
     token_probas = np.float64(TAGGER.model.predict([doc])[0])
-    if any(token_probas < 0):
+    if not NORMALIZE_WITH_SOFTMAX and (token_probas < 0).any():
         NORMALIZE_WITH_SOFTMAX = True
         print("Negative probability detected! We're probably getting logits instead. Normalizing with softmax.")
     if NORMALIZE_WITH_SOFTMAX:
