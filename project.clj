@@ -1,4 +1,4 @@
-(defproject midas-loop "0.0.1-rc2"
+(defproject midas-loop "0.0.1"
 
   :description "Midas Loop"
   :url "http://github.com/gucorpling/midas-loop"
