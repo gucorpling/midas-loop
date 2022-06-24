@@ -11,7 +11,7 @@ To quickly get a server up and running:
 
 1. Clone the repository.
 
-```
+```bash
 git clone https://github.com/gucorpling/midas-loop.git
 cd midas-loop
 ```   
@@ -19,33 +19,33 @@ cd midas-loop
 2. You may now interact with Midas Loop by invoking the script `scripts/midas-loop.sh`.
    First, invoke it with no arguments to download the JAR and create a configuration file.
    
-```
+```bash
 bash scripts/midas-loop.sh
 ```
    
 3. Now, we will import a sample document into Midas Loop.
    
-```
+```bash
 wget https://raw.githubusercontent.com/gucorpling/amalgum/master/amalgum/fiction/dep/AMALGUM_fiction_amontillado.conllu
 bash scripts/midas-loop.sh import AMALGUM_fiction_amontillado.conllu
 ```
 
 4. Now generate a token for yourself.
 
-```
+```bash
 bash scripts/midas-loop.sh token add --name YOURNAME --email YOUREMAIL --quality gold
 ```
 
 5. Start the server, and enter the token you generated for yourself.
 
-```
+```bash
 bash scripts/midas-loop.sh run
 ```
 
 6. If you wish to use Midas Loop with NLP services, refer to our [instructions for setup](services/README.md). 
 After the services are set up, modify your `config.edn` to look like below and reimport any documents you imported.
 
-```
+```edn
 {:port 3000,
  :midas-loop.server.xtdb/config {:main-db-dir "xtdb_data"},
  :midas-loop.server.tokens/config {:token-db-dir "xtdb_token_data"},
