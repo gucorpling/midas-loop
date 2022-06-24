@@ -1,7 +1,7 @@
 # Introduction
 
 **Midas Loop** is a web application for taking [Universal Dependencies](https://universaldependencies.org/) corpora and improving the quality of their annotations.
-For more information on motivation, functionality, and supported workflows, please see our paper at [LAW XVI](https://cemantix.org/workshops/law/xvi/) (link to paper coming).
+For more information on motivation, functionality, and supported workflows, please see [our paper](https://gucorpling.github.io/midas-loop/midas_loop.pdf).
 
 See [documentation](https://gucorpling.github.io/midas-loop) and our [paper](https://gucorpling.github.io/midas-loop/midas_loop.pdf) for more details.
 
