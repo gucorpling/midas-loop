@@ -1,9 +1,9 @@
 # Introduction
 
-*Midas Loop* is a web application for taking [Universal Dependencies](https://universaldependencies.org/) corpora and improving the quality of their annotations.
+**Midas Loop** is a web application for taking [Universal Dependencies](https://universaldependencies.org/) corpora and improving the quality of their annotations.
 For more information on motivation, functionality, and supported workflows, please see our paper at [LAW XVI](https://cemantix.org/workshops/law/xvi/) (link to paper coming).
 
-See [documentation](https://gucorpling.github.io/midas-loop) for more details.
+See [documentation](https://gucorpling.github.io/midas-loop) and our [paper](docs/midas_loop.pdf) for more details.
 
 # Quick Start
 
@@ -52,4 +52,17 @@ After the services are set up, modify your `config.edn` to look like below and r
  :nlp-services [{:type :http :anno-type :xpos :url "http://localhost:5555"}
                 {:type :http :anno-type :sentence :url "http://localhost:5556"}
                 {:type :http :anno-type :head :url "http://localhost:5557"}]}
+```
+
+# Citation
+If you use Midas Loop in your research, please cite it like so (URL to be added soon):
+
+```
+@InProceedings{gessler-etal-2022-midas-loop,
+  author    = {Luke Gessler and Lauren Levine and Amir Zeldes},
+  booktitle = {Proceedings of LREC 2022},
+  title     = {{M}idas {L}oop: Prioritized {H}uman-in-the-{L}oop Annotation for Large Scale Multilayer Data},
+  year      = {2022},
+  address   = {Marseille, France}
+}
 ```
