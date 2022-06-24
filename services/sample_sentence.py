@@ -28,6 +28,7 @@ app = Flask(__name__)
 # Load splitter model
 model = SequenceTagger.load("flair-splitter-sent.pt")
 
+cache = {}
 
 def is_supertoken(t):
     return isinstance(t["id"], Iterable) and t["id"][1] == "-"
@@ -54,6 +55,11 @@ def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: i
     target_end = -1
     toknum = 0
 
+    global cache
+    if len(cache) > 1000:  # Prevent possible memory leak if service is run on thousands of documents
+        for key in cache:
+            del cache[key]
+            break
     #sys.stderr.write("target:\n")
     #sys.stderr.write(sent_conllu + "\n")
 
@@ -81,54 +87,59 @@ def ssplit(full_conllu: str, sent_conllu: str, span_size: int=20, stride_size: i
     final_mapping = {}  # Map each contextualized token to its (sequence_number, position)
     spans = []  # Holds flair Sentence objects for labeling
 
-    # Hack tokens up into overlapping shingles
-    wraparound = toks[-stride_size :] + toks + toks[: span_size]
-    idx = 0
-    mapping = defaultdict(set)
-    snum = 0
-    while idx < len(toks):
-        if idx + span_size < len(wraparound):
-            span = wraparound[idx : idx + span_size]
-        else:
-            span = wraparound[idx:]
-        sent = Sentence(" ".join(span), use_tokenizer=lambda x: x.split())
-        spans.append(sent)
-        for i in range(idx - stride_size, idx + span_size - stride_size):
-            # start, end, snum
-            if i >= 0 and i < len(toks):
-                mapping[i].add((idx - stride_size, idx + span_size - stride_size, snum))
-        idx += stride_size
-        snum += 1
+    tok_string = " ".join(toks)
+    if tok_string in cache:
+        preds = cache[tok_string]
+    else:
+        # Hack tokens up into overlapping shingles
+        wraparound = toks[-stride_size :] + toks + toks[: span_size]
+        idx = 0
+        mapping = defaultdict(set)
+        snum = 0
+        while idx < len(toks):
+            if idx + span_size < len(wraparound):
+                span = wraparound[idx : idx + span_size]
+            else:
+                span = wraparound[idx:]
+            sent = Sentence(" ".join(span), use_tokenizer=lambda x: x.split())
+            spans.append(sent)
+            for i in range(idx - stride_size, idx + span_size - stride_size):
+                # start, end, snum
+                if i >= 0 and i < len(toks):
+                    mapping[i].add((idx - stride_size, idx + span_size - stride_size, snum))
+            idx += stride_size
+            snum += 1
 
-    for idx in mapping:
-        best = span_size
-        for m in mapping[idx]:
-            start, end, snum = m
-            dist_to_end = end - idx
-            dist_to_start = idx - start
-            delta = abs(dist_to_end - dist_to_start)
-            if delta < best:
-                best = delta
-                final_mapping[idx] = (snum, idx - start)  # Get sentence number and position in sentence
+        for idx in mapping:
+            best = span_size
+            for m in mapping[idx]:
+                start, end, snum = m
+                dist_to_end = end - idx
+                dist_to_start = idx - start
+                delta = abs(dist_to_end - dist_to_start)
+                if delta < best:
+                    best = delta
+                    final_mapping[idx] = (snum, idx - start)  # Get sentence number and position in sentence
 
-    # Predict
-    model.predict(spans)
+        # Predict
+        model.predict(spans)
 
-    preds = []
-    for idx in final_mapping:
-        snum, position = final_mapping[idx]
-        if str(flair.__version__).startswith("0.4"):
-            pred_tag = spans[snum].tokens[position].tags["ner"].value.replace("-SENT","")
-            pred_proba = spans[snum].tokens[position].tags["ner"].score
-        else:
-            pred_tag = spans[snum].tokens[position].labels[0].value.replace("-SENT","")
-            pred_proba = spans[snum].tokens[position].labels[0].score
-        other_tag = "B" if pred_tag == "O" else "O"
-        other_proba = 1-pred_proba
-        tid = ids[idx]
+        preds = []
+        for idx in final_mapping:
+            snum, position = final_mapping[idx]
+            if str(flair.__version__).startswith("0.4"):
+                pred_tag = spans[snum].tokens[position].tags["ner"].value.replace("-SENT","")
+                pred_proba = spans[snum].tokens[position].tags["ner"].score
+            else:
+                pred_tag = spans[snum].tokens[position].labels[0].value.replace("-SENT","")
+                pred_proba = spans[snum].tokens[position].labels[0].score
+            other_tag = "B" if pred_tag == "O" else "O"
+            other_proba = 1-pred_proba
+            tid = ids[idx]
 
-        #preds.append({tid:{pred_tag:pred_proba,other_tag:other_proba}})
-        preds.append({pred_tag:pred_proba,other_tag:other_proba})
+            #preds.append({tid:{pred_tag:pred_proba,other_tag:other_proba}})
+            preds.append({pred_tag:pred_proba,other_tag:other_proba})
+        cache[tok_string] = preds
 
     #sys.stderr.write(str(target_begin) + "\n")
     #sys.stderr.write(str(target_end)+ "\n")
