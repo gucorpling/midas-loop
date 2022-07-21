@@ -112,6 +112,6 @@
     tx))
 
 (defn write-probas [node key token-probas-pairs]
-  (when-not (#{:sentence/probas :xpos/probas :upos/probas :head/probas} key)
+  (when-not (#{:sentence/probas :xpos/probas :upos/probas :head/probas :deprel/probas} key)
     (throw (ex-info "Invalid probas key:" {:key key})))
   (-write-probas node key token-probas-pairs))
