@@ -20,12 +20,16 @@
    "upos-gold-dec"           '[?ugr :desc]
    "head-gold-inc"           '[?hgr :asc]
    "head-gold-dec"           '[?hgr :desc]
+   "deprel-gold-inc"         '[?dgr :asc]
+   "deprel-gold-dec"         '[?dgr :desc]
    "xpos-mean-top-proba-inc" '[?xmtp :asc]
    "xpos-mean-top-proba-dec" '[?xmtp :desc]
    "upos-mean-top-proba-inc" '[?umtp :asc]
    "upos-mean-top-proba-dec" '[?umtp :desc]
    "head-mean-top-proba-inc" '[?hmtp :asc]
-   "head-mean-top-proba-dec" '[?hmtp :desc]})
+   "head-mean-top-proba-dec" '[?hmtp :desc]
+   "deprel-mean-top-proba-inc" '[?dmtp :asc]
+   "deprel-mean-top-proba-dec" '[?dmtp :desc]})
 
 (defn document-query [{:keys [node] :as req}]
   (let [{:keys [limit offset order-by]} (-> req :parameters :query)]
@@ -41,7 +45,7 @@
             (bad-request (str "order-by parameter must be one of the following: " sort-set))
 
             :else
-            (let [query {:find     '[(distinct ?d) ?id ?dn ?tc ?sc ?xgr ?ugr ?hgr ?xmtp ?umtp ?hmtp ?smtp]
+            (let [query {:find     '[(distinct ?d) ?id ?dn ?tc ?sc ?xgr ?ugr ?hgr ?dgr ?xmtp ?umtp ?hmtp ?dmtp ?smtp]
                          :where    '[[?d :document/id ?id]
                                      [?d :document/name ?dn]
                                      [?d :document/sentences ?s]
@@ -50,9 +54,11 @@
                                      [?d :document/*xpos-gold-rate ?xgr]
                                      [?d :document/*upos-gold-rate ?ugr]
                                      [?d :document/*head-gold-rate ?hgr]
+                                     [?d :document/*deprel-gold-rate ?dgr]
                                      [?d :document/*xpos-mean-top-proba ?xmtp]
                                      [?d :document/*upos-mean-top-proba ?umtp]
                                      [?d :document/*head-mean-top-proba ?hmtp]
+                                     [?d :document/*deprel-mean-top-proba ?dmtp]
                                      [?d :document/*sentence-mean-top-proba ?smtp]]
                          :order-by [(sort-map order-by)]
                          :limit    limit
@@ -60,7 +66,7 @@
                   count-query {:find  '[(count ?d)]
                                :where '[[?d :document/id]]}
                   result (xt/q (xt/db node) query)]
-              (ok {:docs  (mapv (fn [[_ id name tcount scount xgr ugr hgr xmtp umtp hmtp smtp :as vals]]
+              (ok {:docs  (mapv (fn [[_ id name tcount scount xgr ugr hgr dgr xmtp umtp hmtp dmtp smtp :as vals]]
                                   {:id                  id
                                    :name                name
                                    :sentence_count      scount
@@ -68,9 +74,11 @@
                                    :xpos_gold_rate      xgr
                                    :upos_gold_rate      ugr
                                    :head_gold_rate      hgr
+                                   :deprel_gold_rate    dgr
                                    :xpos_mean_top_proba (if (= -1 xmtp) nil xmtp)
                                    :upos_mean_top_proba (if (= -1 umtp) nil umtp)
                                    :head_mean_top_proba (if (= -1 hmtp) nil hmtp)
+                                   :deprel_mean_top_proba (if (= -1 dmtp) nil dmtp)
                                    :sentence_mean_top_proba (if (= -1 smtp) nil smtp)})
                                 result)
                    :total (ffirst (xt/q (xt/db node) count-query))}))))))
