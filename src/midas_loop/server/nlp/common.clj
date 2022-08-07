@@ -37,7 +37,7 @@
   (predict-prob-dists [this node sentence]))
 
 (s/def ::url valid-url?)
-(s/def ::anno-type #{:sentence :xpos :upos :head-deprel})
+(s/def ::anno-type #{:sentence :xpos :upos :head-deprel :deprel})
 (s/def ::type #{:http})
 (s/def ::http-config (s/keys :req-un [::url ::type]))
 ;; Maybe extend with other methods in the future

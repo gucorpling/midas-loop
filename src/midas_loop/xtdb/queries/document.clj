@@ -101,18 +101,27 @@
                                      [?head :head/quality "gold"]]
                              :in    [?d]}
                             ?d)
-                         ?head-gold]]
+                         ?head-gold]
+                        [(q {:find  [?deprel]
+                             :where [[?d :document/sentences ?s]
+                                     [?s :sentence/tokens ?t]
+                                     [?t :token/deprel ?deprel]
+                                     [?deprel :deprel/quality "gold"]]
+                             :in    [?d]}
+                            ?d)]]
                :in    '[?id]}]
     (let [res (xt/q (xt/db node) query document-id)
-          [scount tcount xgr ugr hgr] (first res)
+          [scount tcount xgr ugr hgr dgr] (first res)
           stats {:document/*sentence-count      scount
                  :document/*token-count         tcount
                  :document/*xpos-gold-rate      (/ xgr tcount)
                  :document/*upos-gold-rate      (/ ugr tcount)
                  :document/*head-gold-rate      (/ hgr tcount)
+                 :document/*deprel-gold-rate    (/ dgr tcount)
                  :document/*xpos-mean-top-proba (calculate-probas-stats node document-id "xpos")
                  :document/*upos-mean-top-proba (calculate-probas-stats node document-id "upos")
                  :document/*head-mean-top-proba (calculate-probas-stats node document-id "head")
+                 :document/*deprel-mean-top-proba (calculate-probas-stats node document-id "deprel")
                  :document/*sentence-mean-top-proba (calculate-sentence-probas-stats node document-id)}]
       (when-not (= 1 (count res))
         (throw (ex-info "ID produced a result set that did not have exactly one member!" {:document-id document-id})))
